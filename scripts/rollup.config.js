@@ -78,4 +78,50 @@ export default [
       cleanup(),
     ],
   },
+  {
+    input: path.join(__dirname, '../src/STWorklet.js'),
+    output: [
+      {
+        file: 'dist/st-worklet.js',
+        format: 'cjs',
+        banner: banner,
+        sourcemap: false,
+        exports: 'named',
+      },
+    ],
+    plugins: [
+      resolve({
+        browser: true,
+      }),
+      eslint(),
+      babel({
+        babelHelpers: 'bundled',
+        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
+      }),
+      cleanup(),
+    ],
+  },
+  {
+    input: path.join(__dirname, '../src/createSTNode.js'),
+    output: [
+      {
+        file: 'dist/st-audio-node.js',
+        format: 'cjs',
+        banner: banner,
+        sourcemap: false,
+        exports: 'named',
+      },
+    ],
+    plugins: [
+      resolve({
+        browser: true,
+      }),
+      eslint(),
+      babel({
+        babelHelpers: 'bundled',
+        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
+      }),
+      cleanup(),
+    ],
+  },
 ];

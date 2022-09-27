@@ -1,4 +1,4 @@
-import minsSecs, { diffSecs } from './minsSecs';
+import minsSecs, { diffSecs } from './minsSecs.js';
 
 /** Documentation can be found in the `/docs/SoundTouchNode.md` file */
 
@@ -6,29 +6,29 @@ import minsSecs, { diffSecs } from './minsSecs';
  *
  * @param {AudioContext} audioCtx - an AudioContext instance
  * @param {AudioWorkletNode} AudioWorkletNode - actual node, be it window.AudioWorkletNode, or ponyfill
- * @param {ArrayBuffer} arrayBuffer - the raw undecoded audio data
+ * @param {AudioBuffer} audioBuffer - the raw undecoded audio data
  * @param {*} options - not really used yet
  * @return {SoundTouchNode} - a SoundTouchNode instance
  */
 const createSoundTouchNode = (
   audioCtx,
   AudioWorkletNode,
-  arrayBuffer,
+  audioBuffer,
   options
 ) => {
   class SoundTouchNode extends AudioWorkletNode {
     /**
      * @constructor
      * @param {BaseAudioContext} context The associated BaseAudioContext.
-     * @param {ArrayBuffer} arrayBuffer fixed length raw binary data buffer (undecoded audio)
+     * @param {AudioBuffer} audioBuffer fixed length raw binary data buffer (undecoded audio)
      * @param {AudioWorkletNodeOptions} options User-supplied options for
      * AudioWorkletNode.
      */
-    constructor(context, arrayBuffer, options) {
+    constructor(context, audioBuffer, options) {
       super(context, 'soundtouch-worklet', options);
 
-      // Copy the passed ArrayBuffer, so it doesn't become detached and can be reused
-      this._arrayBuffer = arrayBuffer.slice(0);
+      // Copy the passed AudioBuffer, so it doesn't become detached and can be reused
+      this._audioBuffer = audioBuffer;
       // an array of all of the listeners
       this.listeners = [];
       // setup our Worklet to Node messaging listener
@@ -296,7 +296,6 @@ const createSoundTouchNode = (
     /* play controls */
     /**
      * @play (async)
-     * @param {Float} offset - the time (in seconds) to play from, defaulting to SoundTouchNode.currentTime
      */
     async play() {
       if (!this.ready) {
@@ -312,13 +311,19 @@ const createSoundTouchNode = (
         }
         this._initialPlay = false;
       }
+
       // start the BufferSourceNode processing immediately from this time
-      //this.bufferNode.start(0, offset);
-      await this.context.resume();
+      await this.context.suspend(0);
+      await this.context.resume(0);
       // reset the 'startTime' tracking variable
       this._startTime = new Date().getTime();
       // set the SoundTouchNode to 'playing'
       this.playing = true;
+
+      this.bufferNode = this.context.createBufferSource();
+      this.bufferNode.buffer = this.audioBuffer;
+      this.bufferNode.onended = () => console.log('song ended');
+      this.bufferNode.connect(this);
     }
 
     pause() {
@@ -332,7 +337,7 @@ const createSoundTouchNode = (
     async stop() {
       // stop the BufferSourceNode from processing immediately
       //this.bufferNode.stop(0);
-      await this.context.suspend();
+      await this.context.suspend(0);
       // reset time tracking variables
       this.currentTime = 0;
       this._startTime = new Date().getTime();
@@ -440,11 +445,7 @@ const createSoundTouchNode = (
         // console.log('processor constructor: ', detail);
         // The AudioWorkletProcessor object is instantiated, so we can now decode the raw audio.
         // The 'handleAudioData()' method will send a message back to the AudioWorkletProcessor
-        this.context.decodeAudioData(
-          this._arrayBuffer,
-          (audioData) => this.handleAudioData(audioData),
-          (err) => console.log('[decodeAudioData ERROR] ', err)
-        );
+        this.handleAudioData(this._audioBuffer);
         return;
       }
 
@@ -493,7 +494,7 @@ const createSoundTouchNode = (
     }
   }
 
-  return new SoundTouchNode(audioCtx, arrayBuffer, options);
+  return new SoundTouchNode(audioCtx, audioBuffer, options);
 };
 
 export default createSoundTouchNode;

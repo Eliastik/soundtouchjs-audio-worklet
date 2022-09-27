@@ -3,6 +3,9 @@
  * http://onlinetonegenerator.com/pitch-shifter.html
  */
 
+// This is pulling SoundTouchJS from the local file system. See the README for proper usage.
+import createSoundTouchNode from '../src/createSoundTouchNode.js';
+
 /**
  * https://github.com/chrisguttandin/standardized-audio-context
  * To see this working with the standaridized-audio-context ponyfill,
@@ -49,12 +52,15 @@ const resetControls = () => {
 const onEnd = (detail) => {
   resetControls();
   updateProgress(detail);
+  setupSoundtouch();
 };
 
 const onInitialized = (detail) => {
   console.log('PitchSoundtouch Initialized ', detail);
   resetControls();
   playBtn.removeAttribute('disabled');
+  soundtouch.on('play', updateProgress);
+  soundtouch.on('end', onEnd);
   is_ready = true;
 };
 
@@ -70,29 +76,42 @@ const loadSource = async (file) => {
   try {
     playBtn.setAttribute('disabled', 'disabled');
 
-    audioCtx = new AudioContext();
-    audioCtx.resume();
-    audioCtx.decodeAudioData(await file.arrayBuffer(), async (data) => {
-      buffer = audioCtx.createBufferSource();
-      buffer.buffer = data;
-      await audioCtx.audioWorklet.addModule("../dist/st-worklet.js");
-      soundtouch = new AudioWorkletNode(audioCtx, "st-worklet");
-      onInitialized();
+    await setupContext();
+    audioCtx.decodeAudioData(await file.arrayBuffer(), (data) => {
+      buffer = data;
+      setupSoundtouch();
     }); 
   } catch (err) {
     console.error('[loadSource] ', err);
   }
 };
 
+const setupContext = function () {
+  try {
+    audioCtx = new AudioContext();
+    return audioCtx.audioWorklet.addModule('../dist/soundtouch-worklet.js');
+  } catch (err) {
+    console.error('[setupContext] ', err);
+  }
+};
+
+const setupSoundtouch = function () {
+  if (soundtouch) {
+    soundtouch.off();
+  }
+  soundtouch = createSoundTouchNode(audioCtx, AudioWorkletNode, buffer);
+  soundtouch.on('initialized', onInitialized);
+};
+
 let is_playing = false;
 const play = function () {
   if (is_ready) {
+    bufferNode = soundtouch.connectToBuffer();
     gainNode = audioCtx.createGain();
-    buffer.connect(soundtouch);
     soundtouch.connect(gainNode); // SoundTouch goes to the GainNode
     gainNode.connect(audioCtx.destination); // GainNode goes to the AudioDestinationNode
 
-    buffer.start();
+    //soundtouch.play();
 
     is_playing = true;
     playBtn.setAttribute('disabled', 'disabled');

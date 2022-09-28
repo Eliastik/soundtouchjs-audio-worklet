@@ -30,7 +30,6 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    */
   constructor(nodeOptions) {
     super();
-    console.log(`nodeOptions = `, nodeOptions);
 
     this._initialized = false;
     this.when = nodeOptions.processorOptions.when; 

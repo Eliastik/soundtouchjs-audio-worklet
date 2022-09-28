@@ -1,5 +1,5 @@
 {
-  "name": "@soundtouchjs/audio-worklet",
+  "name": "@dancecuts/soundtouchjs-audio-worklet",
   "version": "0.1.16",
   "description": "An ES2015+ AudioWorklet implementation of the SoundTouchJS library",
   "module": "dist/soundtouch-audio-node.js",
@@ -32,7 +32,7 @@
   "license": "LGPL-2.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cutterbl/soundtouchjs-audio-worklet.git"
+    "url": "git+https://github.com/cutterbl/soundtouchjs-audio-worklet.git"
   },
   "bugs": {
     "url": "https://github.com/cutterbl/soundtouchjs-audio-worklet/issues"
@@ -43,7 +43,6 @@
     "release": "standard-version",
     "start": "node scripts/server.js"
   },
-  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "7.17.10",
     "@babel/core": "7.17.10",
@@ -156,5 +155,6 @@
         "always"
       ]
     }
-  }
+  },
+  "main": "index.js"
 }

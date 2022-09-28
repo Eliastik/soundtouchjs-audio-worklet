@@ -79,10 +79,10 @@ export default [
     ],
   },
   {
-    input: path.join(__dirname, '../src/STWorklet.js'),
+    input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.js'),
     output: [
       {
-        file: 'dist/st-worklet.js',
+        file: 'dist/scheduled-soundtouch-worklet.js',
         format: 'cjs',
         banner: banner,
         sourcemap: false,
@@ -102,10 +102,10 @@ export default [
     ],
   },
   {
-    input: path.join(__dirname, '../src/createSTNode.js'),
+    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.js'),
     output: [
       {
-        file: 'dist/st-audio-node.js',
+        file: 'dist/scheduled-soundtouch-audio-node.js',
         format: 'cjs',
         banner: banner,
         sourcemap: false,

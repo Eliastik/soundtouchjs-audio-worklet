@@ -25,12 +25,40 @@
   </head>
   <body>
     <input id="fileinput" type="file"/>
+    <div id="duration"></div>
     <button id="play" disabled>Play</button>
-    <button id="stop" disabled>Pause</button>
-    <div class="progress">
-      <div><span id="currentTime">0:00</span><span id="duration"></span></div>
-      <progress id="progressMeter" value="0" max="100"></progress>
-    </div>
+    <button id="stop" disabled>Stop</button>
+    <div id="currentTime">0</div>
+    When:
+    <input
+      type="range"
+      min="0"
+      max="5"
+      value="0"
+      id="whenSlider"
+      step="0.01"
+    />
+    <div id="when"></div>
+    Start point:
+    <input
+      type="range"
+      min="0"
+      max="0"
+      value="0"
+      id="startSlider"
+      step="0.1"
+    />
+    <div id="start"></div>
+    End point:
+    <input
+      type="range"
+      min="0"
+      max="0"
+      value="0"
+      id="endSlider"
+      step="0.1"
+    />
+    <div id="end"></div>
     Tempo:
     <input
       type="range"

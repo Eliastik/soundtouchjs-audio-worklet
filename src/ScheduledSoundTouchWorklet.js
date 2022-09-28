@@ -30,12 +30,12 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    */
   constructor(nodeOptions) {
     super();
+    console.log(`nodeOptions = `, nodeOptions);
 
     this._initialized = false;
-    this._playbackSettings = {
-      when: -1,
-      stopTime: -1,
-    };
+    this.when = nodeOptions.processorOptions.when; 
+    this.offset = Math.floor(nodeOptions.processorOptions.offset); 
+    this.stopTime = nodeOptions.processorOptions.stopTime; 
     // This is the sample buffer array length per channel
     // More info in 'process()' on why we use this length
     this.bufferSize = 128;
@@ -73,19 +73,18 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
         leftChannel,
         rightChannel
       );
-      // setup sampleBuffer to bufferSize * two channels
-      this._samples = new Float32Array(this.bufferSize * 2);
       this._pipe = new SoundTouch();
       /**
        * The SimpleFilter takes the source and SoundTouch to perform the
        * filtering operations on the audio data (stretch, transpose, etc)
        */
       this._filter = new SimpleFilter(this.bufferSource, this._pipe);
+      this._filter.sourcePosition = this.offset;
       // Notify the AudioWorkletNode (SoundTouchNode) that the processor is now ready
+      this._initialized = true;
       this.port.postMessage({
         message: 'PROCESSOR_READY',
       });
-      this._initialized = true;
       return true;
     }
 
@@ -117,17 +116,8 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       return;
     }
 
-    if (message === 'SET_PLAYBACK_PROP' && detail) {
-      const { name, value } = detail;
-      this._playbackSettings[name] = value;
-      // this is debugging stuff, doing nothing if nothing is listening for it
-      this.port.postMessage({
-        message: 'PLAYBACK_PROP_CHANGED',
-        detail: `Updated ${name} to ${
-          this._playbackSettings[name]
-        }\ntypeof ${typeof value}`,
-      });
-      return;
+    if (message === "STOP_PROCESSOR") {
+      return this.stop = true; 
     }
 
     // anything else
@@ -168,22 +158,23 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    * @param {*} outputs - single output of two {Float32Array(128)} channels
    */
   process(inputs, outputs) {
-    // if not initialized and no input data then don't chew process cycles
-    if (!this._initialized || !inputs[0].length || currentTime < this._playbackSettings.when) {
+    if (this.stop) return false;
+
+    const {when, stopTime} = this;
+    // eslint-disable-next-line no-undef
+    if (!this._initialized || !inputs[0].length || currentTime < when) {
       return true;
     }
 
-    // assign to function locals for quick access
     const left = outputs[0][0];
     const right = outputs[0][1];
-    const samples = this._samples;
 
     if (!left || (left && !left.length)) {
       this._sendMessage('PROCESSOR_END');
       return false;
     }
 
-    if (this._filter.sourcePosition > this._playbackSettings.stopTime) {
+    if (this._filter.sourcePosition > stopTime) {
       this._sendMessage('PROCESSOR_END');
       return false;
     }
@@ -197,6 +188,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
      * 'framesExtracted' should always equal the sampleFrames (128) *2 (one for each channel). If no frames were
      * extracted, then we hit the end of the audioBuffer
      **/
+    let samples = new Float32Array(this.bufferSize * 2);
     const framesExtracted = this._filter.extract(samples, inputs[0][0].length);
 
     if (!framesExtracted) {
@@ -212,8 +204,10 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     for (let i = 0; i < framesExtracted; i++) {
       // even frames to the left (starting with 0)
       left[i] = samples[i * 2];
-      // odd frames to the right (starting with 1)
-      right[i] = samples[i * 2 + 1];
+      if (right) {
+        // odd frames to the right (starting with 1)
+        right[i] = samples[i * 2 + 1];
+      }
     }
 
     return true;

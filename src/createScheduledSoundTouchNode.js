@@ -4,15 +4,25 @@
  * @param {AudioBuffer} audioBuffer - an audio buffer
  * @param {callback} - called when the worklet is finished initializing, with the actual ScheduledSoundTouchNode as a parameter.
  */
-export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
+export function createScheduledSoundTouchNode(audioCtx, audioBuffer, playbackSettings, callback) {
   class ScheduledSoundTouchNode extends AudioWorkletNode {
     /**
      * @constructor
      * @param {BaseAudioContext} context The associated BaseAudioContext.
      * @param {AudioBuffer} audioBuffer fixed length raw binary data buffer (undecoded audio)
      */
-    constructor(context, audioBuffer, callback) {
-      super(context, 'scheduled-soundtouch-worklet');
+    constructor(context, audioBuffer, playbackSettings, callback) {
+      const offset = playbackSettings.offset ? playbackSettings.offset * audioBuffer.sampleRate : 0;
+      super(context, 'scheduled-soundtouch-worklet', {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [2], //forces output to stereo, even if input is mono
+        processorOptions: {
+          when: playbackSettings.when || context.currentTime,
+          offset,
+          stopTime: offset * audioBuffer.sampleRate + (playbackSettings.duration ? playbackSettings.duration : audioBuffer.duration) * audioBuffer.sampleRate,
+        },
+      });
       
       this._callback = callback;
       // Copy the passed AudioBuffer, so it doesn't become detached and can be reused
@@ -48,7 +58,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
      *   otherwise returns undefined
      */
     get sampleRate() {
-      return this.audioBuffer?.sampleRate;
+      if (!this.audioBuffer) return undefined;
+      return this.audioBuffer.sampleRate;
     }
 
     /**
@@ -57,7 +68,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
      *   (in seconds), otherwise returns undefined
      */
     get duration() {
-      return this.audioBuffer?.duration;
+      if (!this.audioBuffer) return undefined;
+      return this.audioBuffer.duration;
     }
 
     /**
@@ -66,7 +78,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
      *   otherwise returns undefined
      */
     get bufferLength() {
-      return this.audioBuffer?.length;
+      if (!this.audioBuffer) return undefined;
+      return this.audioBuffer.length;
     }
 
     /**
@@ -75,7 +88,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
      *   otherwise returns undefined
      */
     get numberOfChannels() {
-      return this.audioBuffer?.numberOfChannels;
+      if (!this.audioBuffer) return undefined;
+      return this.audioBuffer.numberOfChannels;
     }
 
     /* AudioWorkletProcessor SimpleFilter params*/
@@ -111,55 +125,37 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
     set tempo(tempo) {
       this._updatePipeProp('tempo', tempo);
     }
-    /* AudioWorkletProcessor SimpleFilter params*/
+    /* AudioWorkletProcessor SimpleFilter params*/ 
 
     /**
-     * @play (async) Plays the entire audio source immediately.
+     * @play Plays the audio source starting at `offset` for `duration` seconds, scheduled to start at `when`.
+     * @when (optional) Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime. Default is this.context.currentTime.
+     * @offset (optional) Where in the audio source to start at, in seconds. Default is 0.
+     * @duration (optional) How long to play the audio source for, in seconds. Default is the duration of the audio buffer.
      */
     play() {
-      return this.play(this.context.currentTime, 0, this.duration);
-    }
-    /**
-     * @play Plays the entire audio source, scheduled to start at `when`.
-     * @when Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime.
-     */
-    play(when) {
-      return this.play(when, 0, this.duration);
-    }
-    /**
-     * @play Plays the audio source starting at `offset`, scheduled to start at `when`.
-     * @when Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime.
-     * @offset Where in the audio source to start at, in seconds.
-     */
-    play(when, offset) {
-      return this.play(when, offset, this.duration - offset);
-    }
-    /**
-     * @play Plays the audio source starting at `offset` for `duration` seconds, scheduled to start at `when`.
-     * @when Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime.
-     * @offset Where in the audio source to start at, in seconds.
-     * @duration How long to play the audio source for, in seconds.
-     */
-    play(when, offset, duration) {
       if (!this.ready) {
         throw new Error('Your processor is not ready yet');
       }
-      console.log(`Scheduling playback for ${when} (currentTime = ${this.context.currentTime}) starting at ${offset} for ${duration}`);
+      //console.log(`Scheduling playback for ${when} (currentTime = ${this.context.currentTime}) starting at ${offset} for ${duration}`);
 
-      this._updatePlaybackProp("when", when);
-      this._updateFilterProp("sourcePosition", offset * this.sampleRate);
-      this._updatePlaybackProp("stopTime", offset * this.sampleRate + duration * this.sampleRate);
+      //this._updatePlaybackProp("when", when);
+      //this._updateFilterProp("sourcePosition", offset * this.sampleRate);
+      //this._updatePlaybackProp("stopTime", offset * this.sampleRate + duration * this.sampleRate);
 
       // set the SoundTouchNode to 'playing'
       this._playing = true;
-
+      
       this.bufferNode = this.context.createBufferSource();
       this.bufferNode.buffer = this.audioBuffer;
       this.bufferNode.connect(this);
     }
 
     stop() {
-      // set the SoundTouchNode to not 'playing'
+      this.port.postMessage({
+        message: 'STOP_PROCESSOR',
+      });
+
       this._playing = false;
 
       if (this.onended && typeof(this.onended) === "function") {
@@ -260,5 +256,5 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, callback) {
     }
   }
 
-  const node = new ScheduledSoundTouchNode(audioCtx, audioBuffer, callback);
-};
+  new ScheduledSoundTouchNode(audioCtx, audioBuffer, playbackSettings, callback);
+}

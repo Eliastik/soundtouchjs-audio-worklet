@@ -37,7 +37,6 @@ keyOutput.innerHTML = keySlider.value;
 const volumeSlider = document.getElementById('volumeSlider');
 const volumeOutput = document.getElementById('volume');
 volumeOutput.innerHTML = volumeSlider.value;
-const currTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
 
 let audioCtx;
@@ -45,7 +44,7 @@ let gainNode;
 let soundtouch;
 let buffer;
 
-const resetControls = (durart) => {
+const resetControls = () => {
   playBtn.setAttribute('disabled', 'disabled');
   stopBtn.setAttribute('disabled', 'disabled');
 };
@@ -67,12 +66,12 @@ const onInitialized = (_duration) => {
 };
 
 const updateProgress = () => {
-  currTime.innerHTML = soundtouch;
+  //currTime.innerHTML = soundtouch;
 };
 
 const loadSource = async (file) => {
   if (soundtouch && soundtouch.playing) {
-    stop(true);
+    stop();
   }
   try {
     playBtn.setAttribute('disabled', 'disabled');
@@ -91,7 +90,11 @@ const loadSource = async (file) => {
 
 const play = function () {
   if (buffer) {
-    createScheduledSoundTouchNode(audioCtx, buffer, (node) => {
+    createScheduledSoundTouchNode(audioCtx, buffer, {
+      when: audioCtx.currentTime + Number(whenSlider.value), 
+      offset: Number(startSlider.value), 
+      duration: Number(endSlider.value) - Number(startSlider.value)
+    }, (node) => {
       soundtouch = node;
       soundtouch.tempo = tempoSlider.value;
       soundtouch.pitch = pitchSlider.value;
@@ -101,7 +104,7 @@ const play = function () {
       soundtouch.connect(gainNode); // SoundTouch goes to the GainNode
       gainNode.connect(audioCtx.destination); // GainNode goes to the AudioDestinationNode
   
-      soundtouch.play(audioCtx.currentTime + Number(whenSlider.value), Number(startSlider.value), Number(endSlider.value - startSlider.value));
+      soundtouch.play();
   
       playBtn.setAttribute('disabled', 'disabled');
       stopBtn.removeAttribute('disabled');
@@ -142,16 +145,25 @@ endSlider.addEventListener('input', function () {
   startOutput.innerHTML = startSlider.value;
 });
 
-tempoSlider.addEventListener('input', function () {
+tempoSlider.addEventListener('input', function (e) {
+  if (!soundtouch) {
+    return e.preventDefault();
+  }
   tempoOutput.innerHTML = soundtouch.tempo = this.value;
 });
 
-pitchSlider.addEventListener('input', function () {
+pitchSlider.addEventListener('input', function (e) {
+  if (!soundtouch) {
+    return e.preventDefault();
+  }
   pitchOutput.innerHTML = soundtouch.pitch = this.value;
   soundtouch.tempo = tempoSlider.value;
 });
 
-keySlider.addEventListener('input', function () {
+keySlider.addEventListener('input', function (e) {
+  if (!soundtouch) {
+    return e.preventDefault();
+  }
   soundtouch.pitchSemitones = this.value;
   keyOutput.innerHTML = this.value / 2;
   soundtouch.tempo = tempoSlider.value;

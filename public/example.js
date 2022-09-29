@@ -50,6 +50,11 @@ const resetControls = () => {
 };
 
 const onEnd = () => {
+  //if we don't disconnect the gainNode here, we'll keep adding more and more 
+  //and the volume will get louder and louder until your speakers blow up!
+  gainNode.disconnect(); // disconnect the DestinationNode
+  soundtouch.disconnect(); // disconnect the AudioGainNode
+
   resetControls();
   playBtn.removeAttribute('disabled');
   updateProgress();
@@ -81,6 +86,7 @@ const loadSource = async (file) => {
     audioCtx.decodeAudioData(await file.arrayBuffer(), async (data) => {
       buffer = data;
       await audioCtx.audioWorklet.addModule("../dist/scheduled-soundtouch-worklet.js");
+      soundtouch = createScheduledSoundTouchNode(audioCtx, buffer);
       onInitialized(data.duration);
     }); 
   } catch (err) {
@@ -90,25 +96,20 @@ const loadSource = async (file) => {
 
 const play = function () {
   if (buffer) {
-    createScheduledSoundTouchNode(audioCtx, buffer, {
-      when: audioCtx.currentTime + Number(whenSlider.value), 
-      offset: Number(startSlider.value), 
-      duration: Number(endSlider.value) - Number(startSlider.value)
-    }, (node) => {
-      soundtouch = node;
-      soundtouch.tempo = tempoSlider.value;
-      soundtouch.pitch = pitchSlider.value;
-      soundtouch.onended = onEnd;
+    soundtouch.tempo = tempoSlider.value;
+    soundtouch.pitch = pitchSlider.value;
+    soundtouch.onended = onEnd;
 
-      gainNode = audioCtx.createGain();
-      soundtouch.connect(gainNode); // SoundTouch goes to the GainNode
-      gainNode.connect(audioCtx.destination); // GainNode goes to the AudioDestinationNode
-  
-      soundtouch.play();
-  
-      playBtn.setAttribute('disabled', 'disabled');
-      stopBtn.removeAttribute('disabled');
-    });
+    gainNode = audioCtx.createGain();
+    soundtouch.connect(gainNode); // SoundTouch goes to the GainNode
+    gainNode.connect(audioCtx.destination); // GainNode goes to the AudioDestinationNode
+
+    soundtouch.play(audioCtx.currentTime + Number(whenSlider.value), 
+      Number(startSlider.value), 
+      Number(endSlider.value) - Number(startSlider.value));
+
+    playBtn.setAttribute('disabled', 'disabled');
+    stopBtn.removeAttribute('disabled');
   }
 };
 

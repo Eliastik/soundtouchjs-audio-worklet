@@ -1,6 +1,6 @@
 /**
  * @param {AudioContext} audioCtx - an AudioContext instance
- * @param {AudioBuffer} audioBuffer - an audio buffer
+ * @param {AudioBuffer} audioBuffer - an AudioBuffer
  */
 export function createScheduledSoundTouchNode(audioCtx, audioBuffer) {
   class ScheduledSoundTouchNode extends AudioWorkletNode {
@@ -76,23 +76,19 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer) {
     }
 
     /**
-     * @play Plays the audio source starting at `offset` for `duration` seconds, scheduled to start at `when`.
+     * @start Plays the audio source starting at `offset` for `duration` seconds, scheduled to start at `when`.
      * @when (optional) Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime. Default is this.context.currentTime.
      * @offset (optional) Where in the audio source to start at, in seconds. Default is 0.
      * @duration (optional) How long to play the audio source for, in seconds. Default is the duration of the audio buffer.
      */
-    play(when = null, offset = null, duration = null) {
+    start(when = null, offset = null, duration = null) {
       when = when || this.context.currentTime;
       offset = offset || 0;
       duration = duration || this.duration;
       if (!this.ready) {
-        throw new Error('[ERROR] ScheduledSoundTouch worklet is not ready yet!');
+        throw new Error('[ERROR] ScheduledSoundTouchWorklet is not ready yet!');
       }
 
-      console.log(`Scheduling playback for ${when} (currentTime = ${this.context.currentTime}) starting at ${offset} for ${duration}`);
-      //this._updatePlaybackProp("when", when);
-      //this._updateFilterProp("sourcePosition", Math.floor(offset * this.sampleRate));
-      //this._updatePlaybackProp("stopTime", Math.floor(offset * this.sampleRate + duration * this.sampleRate));
       this.parameters.get("when").value = when;
       this.parameters.get("offset").value = Math.floor(offset * this.sampleRate);
       this.parameters.get("stopTime").value = Math.floor(offset * this.sampleRate + duration * this.sampleRate);
@@ -115,10 +111,6 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer) {
       if (this.onended && typeof(this.onended) === "function") {
         this.onended();
       }
-    }
-
-    onprocessorerror(err) {
-      throw err;
     }
 
     _messageProcessor(eventFromWorker) {
@@ -145,6 +137,9 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer) {
       }
 
       if (message === 'PROCESSOR_READY') {
+        if (this.oninitialized && typeof(this.oninitialized) === "function") {
+          this.oninitialized(this);
+        }
         return this._ready = true;
       }
 

@@ -14,6 +14,7 @@ const banner = `/*
 * Copyright (c) Ryan Berdeen
 * Copyright (c) Jakub Fiala
 * Copyright (c) Steve 'Cutter' Blades
+* Copyright (c) Dance Cuts LLC
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
@@ -32,13 +33,13 @@ const banner = `/*
 
 export default [
   {
-    input: path.join(__dirname, '../src/createSoundTouchNode.js'),
+    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.js'),
     output: [
       {
-        file: pkg.module,
-        format: 'es',
+        file: 'dist/scheduled-soundtouch-audio-node.js',
+        format: 'cjs',
         banner: banner,
-        sourcemap: true,
+        sourcemap: false,
         exports: 'named',
       },
     ],
@@ -56,56 +57,10 @@ export default [
     ],
   },
   {
-    input: path.join(__dirname, '../src/SoundTouchWorklet.js'),
-    output: [
-      {
-        file: 'dist/soundtouch-worklet.js',
-        format: 'cjs',
-        banner: banner,
-        sourcemap: false,
-        exports: 'named',
-      },
-    ],
-    plugins: [
-      resolve({
-        browser: true,
-      }),
-      eslint(),
-      babel({
-        babelHelpers: 'bundled',
-        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
-      }),
-      cleanup(),
-    ],
-  },
-  {
     input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.js'),
     output: [
       {
         file: 'dist/scheduled-soundtouch-worklet.js',
-        format: 'cjs',
-        banner: banner,
-        sourcemap: false,
-        exports: 'named',
-      },
-    ],
-    plugins: [
-      resolve({
-        browser: true,
-      }),
-      eslint(),
-      babel({
-        babelHelpers: 'bundled',
-        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
-      }),
-      cleanup(),
-    ],
-  },
-  {
-    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.js'),
-    output: [
-      {
-        file: 'dist/scheduled-soundtouch-audio-node.js',
         format: 'cjs',
         banner: banner,
         sourcemap: false,

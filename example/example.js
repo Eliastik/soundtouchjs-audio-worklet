@@ -83,12 +83,11 @@ const loadSource = async (file) => {
 
     audioCtx = new AudioContext();
     audioCtx.resume();
-    audioCtx.decodeAudioData(await file.arrayBuffer(), async (data) => {
-      buffer = data;
-      await audioCtx.audioWorklet.addModule("../dist/scheduled-soundtouch-worklet.js");
-      soundtouch = createScheduledSoundTouchNode(audioCtx, buffer);
-      onInitialized(data.duration);
-    }); 
+    const data = await audioCtx.decodeAudioData(await file.arrayBuffer());
+    buffer = data;
+    await audioCtx.audioWorklet.addModule("../dist/scheduled-soundtouch-worklet.js");
+    soundtouch = createScheduledSoundTouchNode(audioCtx, buffer);
+    onInitialized(data.duration);
   } catch (err) {
     console.error('[loadSource] ', err);
   }
@@ -104,7 +103,7 @@ const play = function () {
     soundtouch.connect(gainNode); // SoundTouch goes to the GainNode
     gainNode.connect(audioCtx.destination); // GainNode goes to the AudioDestinationNode
 
-    soundtouch.play(audioCtx.currentTime + Number(whenSlider.value), 
+    soundtouch.start(audioCtx.currentTime + Number(whenSlider.value), 
       Number(startSlider.value), 
       Number(endSlider.value) - Number(startSlider.value));
 

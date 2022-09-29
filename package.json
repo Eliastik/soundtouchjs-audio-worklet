@@ -1,7 +1,7 @@
 {
-  "name": "@dancecuts/soundtouchjs-audio-worklet",
+  "name": "@dancecuts/soundtouchjs-scheduled-audio-worklet",
   "version": "0.1.17",
-  "description": "An ES2015+ AudioWorklet implementation of the SoundTouchJS library",
+  "description": "An AudioWorklet implementation of the SoundTouchJS library with scheduling",
   "module": "dist/scheduled-soundtouch-audio-node.js",
   "exports": {
     ".": {
@@ -21,8 +21,9 @@
     "javascript",
     "es2015"
   ],
-  "author": "Steve 'Cutter' Blades",
+  "author": "Dance Cuts LLC",
   "contributors": [
+    "Dance Cuts LLC <support@dancecuts.com> (https://dancecuts.com/)",
     "Steve 'Cutter' Blades <web.admin@cutterscrossing.com> (https://cutterscrossing.com/)",
     "Olli Parviainen <oparviai@iki.fi> (https://www.surina.net/soundtouch/)",
     "Ryan Berdeen <ryan@ryanberdeen.com> (http://ryanberdeen.com/)",
@@ -32,10 +33,10 @@
   "license": "LGPL-2.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cutterbl/soundtouchjs-audio-worklet.git"
+    "url": "git+https://github.com/DanceCuts/soundtouchjs-scheduled-audio-worklet.git"
   },
   "bugs": {
-    "url": "https://github.com/cutterbl/soundtouchjs-audio-worklet/issues"
+    "url": "https://github.com/DanceCuts/soundtouchjs-scheduled-audio-worklet/issues"
   },
   "homepage": "https://github.com/cutterbl/SoundTouchJS",
   "scripts": {
@@ -64,8 +65,7 @@
     "rollup-plugin-clear": "2.0.7",
     "rollup-plugin-eslint": "7.0.0",
     "serve-static": "1.15.0",
-    "soundtouchjs": "0.1.30",
-    "standard-version": "9.3.2"
+    "soundtouchjs": "0.1.30"
   },
   "prettier": {
     "printWidth": 80,
@@ -84,51 +84,6 @@
         "sentence-case"
       ]
     }
-  },
-  "standard-version": {
-    "header": "Changelog",
-    "types": [
-      {
-        "type": "feat",
-        "section": "Features"
-      },
-      {
-        "type": "fix",
-        "section": "Bug Fixes"
-      },
-      {
-        "type": "chore",
-        "hidden": true
-      },
-      {
-        "type": "docs",
-        "hidden": true
-      },
-      {
-        "type": "style",
-        "hidden": true
-      },
-      {
-        "type": "refactor",
-        "hidden": true
-      },
-      {
-        "type": "perf",
-        "hidden": true
-      },
-      {
-        "type": "test",
-        "hidden": true
-      }
-    ],
-    "commitUrlFormat": "{{host}}/{{owner}}/{{repository}}/commit/{{hash}}",
-    "compareUrlFormat": "{{host}}/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}",
-    "issueUrlFormat": "{{host}}/{{owner}}/{{repository}}/issues/{{id}}",
-    "userUrlFormat": "{{host}}/{{user}}",
-    "releaseCommitMessageFormat": "chore(release): {{currentTag}}",
-    "issuePrefixes": [
-      "#"
-    ]
   },
   "eslintConfig": {
     "env": {

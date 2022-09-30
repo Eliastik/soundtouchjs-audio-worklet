@@ -101,7 +101,9 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
   }
 
   reset() {
-    this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+    if (this._filter) {
+      this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+    }
   }
 
   resetAndEnd() {

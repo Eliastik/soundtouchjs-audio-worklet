@@ -1,6 +1,6 @@
 {
   "name": "@dancecuts/soundtouchjs-scheduled-audio-worklet",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "An AudioWorklet implementation of the SoundTouchJS library with scheduling",
   "module": "dist/scheduled-soundtouch-audio-node.js",
   "exports": {
@@ -23,7 +23,7 @@
   ],
   "author": "Dance Cuts LLC",
   "contributors": [
-    "Dance Cuts LLC <support@dancecuts.com> (https://dancecuts.com/)",
+    "DanceCuts LLC <support@dancecuts.com> (https://dancecuts.com/)",
     "Steve 'Cutter' Blades <web.admin@cutterscrossing.com> (https://cutterscrossing.com/)",
     "Olli Parviainen <oparviai@iki.fi> (https://www.surina.net/soundtouch/)",
     "Ryan Berdeen <ryan@ryanberdeen.com> (http://ryanberdeen.com/)",

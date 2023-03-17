@@ -1,5 +1,6 @@
 /*
  * SoundTouch JS audio processing library
+ * Copyright (c) DanceCuts LLC
  * Copyright (c) Olli Parviainen
  * Copyright (c) Ryan Berdeen
  * Copyright (c) Jakub Fiala

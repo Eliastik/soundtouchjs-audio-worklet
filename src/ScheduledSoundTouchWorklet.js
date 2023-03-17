@@ -36,7 +36,11 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     });
   }
 
-  //Called when message recieved from AudioWorkletNode
+  /**
+   * Called when message received from AudioWorkletNode
+   * @param {Map} eventFromWorker - a map containing the keys `message` and `detail`
+   * @returns null
+   */
   _messageProcessor(eventFromWorker) {
     const { message, detail } = eventFromWorker.data;
 
@@ -59,7 +63,12 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     }
   }
 
-  //Sends message to the AudioWorkletNode (ScheduledSoundTouchNode)
+  /**
+   * Sends message to the AudioWorkletNode (ScheduledSoundTouchNode)
+   * @param {any} message 
+   * @param {any} detail 
+   * @returns 
+   */
   _sendMessage(message, detail = null) {
     if (!message) {
       return;
@@ -124,7 +133,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     }
 
     const left = outputs[0][0];
-    const right = outputs[0][1];
+    const right = outputs[0].length > 1 ? outputs[0][1] : outputs[0][0];
 
     if (!left || (left && !left.length)) {
       this.resetAndEnd();
@@ -151,7 +160,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     let samples = new Float32Array(this.bufferSize * 2);
     const framesExtracted = this._filter.extract(samples, inputs[0][0].length);
 
-    if (!framesExtracted) { //no more audio left to process, stop playing
+    if (isNaN(samples[0]) || !framesExtracted) { //no more audio left to process, stop playing
       this.resetAndEnd();
       return true;
     }
@@ -159,8 +168,10 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     // The sampleBuffer is an interleavered Float32Array (LRLRLRLRLR...), so we pull the bits from their corresponding location
     for (let i = 0; i < framesExtracted; i++) {
       left[i] = samples[i * 2];
-      if (right) { //check might be necessary if output is mono? idk
-        right[i] = samples[i * 2 + 1];
+      right[i] = samples[i * 2 + 1];
+      if (isNaN(left[i]) || isNaN(right[i])) {
+        left[i] = 0;
+        right[i] = 0;
       }
     }
 

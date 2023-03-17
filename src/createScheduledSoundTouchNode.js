@@ -46,7 +46,7 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       this._audioBuffer = audioBuffer;
       this._playing = false;
       this._ready = false;
-      this.oninitialized = onInitialized;
+      this._onInitialized = onInitialized;
     }
 
     /** (Readonly) Returns true if the node is currently playing */
@@ -88,7 +88,7 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
      * @param {Function(ScheduledSoundTouchNode)} func - The function to be called when the internal Soundtouch processor is ready.
      */
     set oninitialized(func) {
-      this.oninitialized = func;
+      this._onInitialized = func;
     }
 
     /** Returns the currently set pitch of the node. */
@@ -199,8 +199,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
 
       if (message === 'PROCESSOR_READY') {
         this._ready = true;
-        if (this.oninitialized && typeof(this.oninitialized) === "function") {
-          this.oninitialized(this);
+        if (this._onInitialized && typeof(this._onInitialized) === "function") {
+          this._onInitialized(this);
         }
         return;
       }

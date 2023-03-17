@@ -1,6 +1,6 @@
 {
   "name": "@dancecuts/soundtouchjs-scheduled-audio-worklet",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "An AudioWorklet implementation of the SoundTouchJS library with scheduling",
   "module": "dist/scheduled-soundtouch-audio-node.js",
   "exports": {
@@ -41,7 +41,7 @@
   "homepage": "https://github.com/cutterbl/SoundTouchJS",
   "scripts": {
     "build": "rollup -c scripts/rollup.config.js",
-    "release": "standard-version",
+    "release": "yarn build && yarn publish",
     "start": "node scripts/server.js"
   },
   "devDependencies": {

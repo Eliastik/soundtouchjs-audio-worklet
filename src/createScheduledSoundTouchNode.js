@@ -87,7 +87,7 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
     /**
      * @param {Function(ScheduledSoundTouchNode)} func - The function to be called when the internal Soundtouch processor is ready.
      */
-    set oninitialized(func) {
+    set onInitialized(func) {
       this._onInitialized = func;
     }
 

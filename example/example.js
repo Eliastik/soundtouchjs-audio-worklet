@@ -4,6 +4,7 @@
  */
 
 import {createScheduledSoundTouchNode} from "../src/createScheduledSoundTouchNode.js";
+import {audioBufferToWav} from "./audiobuffer-to-wav.js";
 
 /**
  * https://github.com/chrisguttandin/standardized-audio-context
@@ -16,6 +17,8 @@ import {createScheduledSoundTouchNode} from "../src/createScheduledSoundTouchNod
 const fileInput = document.getElementById('fileinput');
 const playBtn = document.getElementById('play');
 const stopBtn = document.getElementById('stop');
+const exportBtn = document.getElementById('export');
+const exportLoading = document.getElementById('exportLoading');
 const whenSlider = document.getElementById('whenSlider');
 const whenOutput = document.getElementById('when');
 whenOutput.innerHTML = whenSlider.value;
@@ -39,7 +42,7 @@ const volumeOutput = document.getElementById('volume');
 volumeOutput.innerHTML = volumeSlider.value;
 const duration = document.getElementById('duration');
 
-let audioCtx;
+let audioCtx = new AudioContext();
 let gainNode;
 let soundtouch;
 let buffer;
@@ -57,21 +60,17 @@ const onEnd = () => {
 
   resetControls();
   playBtn.removeAttribute('disabled');
-  updateProgress();
 };
 
 const onInitialized = (_duration) => {
   resetControls();
   playBtn.removeAttribute('disabled');
+  exportBtn.removeAttribute('disabled');
   duration.innerHTML = `Song is ${_duration} seconds long`;
   startSlider.max = _duration;
   endSlider.max = _duration;
   endSlider.value = _duration;
   endOutput.innerHTML = endSlider.value;
-};
-
-const updateProgress = () => {
-  //currTime.innerHTML = soundtouch;
 };
 
 const loadSource = async (file) => {
@@ -81,16 +80,19 @@ const loadSource = async (file) => {
   try {
     playBtn.setAttribute('disabled', 'disabled');
 
-    audioCtx = new AudioContext();
     audioCtx.resume();
     const data = await audioCtx.decodeAudioData(await file.arrayBuffer());
     buffer = data;
-    await audioCtx.audioWorklet.addModule("../dist/scheduled-soundtouch-worklet.js");
-    soundtouch = createScheduledSoundTouchNode(audioCtx, buffer);
+    await createNode();
     onInitialized(data.duration);
   } catch (err) {
     console.error('[loadSource] ', err);
   }
+};
+
+const createNode = async () => {
+  await audioCtx.audioWorklet.addModule("../dist/scheduled-soundtouch-worklet.js");
+  soundtouch = createScheduledSoundTouchNode(audioCtx, buffer);
 };
 
 const play = function () {
@@ -128,6 +130,44 @@ fileInput.onchange = (e) => {
 
 playBtn.onclick = play;
 stopBtn.onclick = () => stop();
+exportBtn.onclick = async () => {
+  if (!buffer) return;
+
+  playBtn.setAttribute('disabled', 'disabled');
+  exportBtn.setAttribute('disabled', 'disabled');
+  exportLoading.style.display = "block";
+  audioCtx = new OfflineAudioContext({
+    numberOfChannels: 2,
+    length: buffer.sampleRate * (Number(whenSlider.value) + (Number(endSlider.value) - Number(startSlider.value)) + 1),
+    sampleRate: buffer.sampleRate,
+  });
+  await createNode();
+  soundtouch.onInitialized = async () => {
+    play();
+    try {
+      const exportBuffer = await audioCtx.startRendering();
+      const wavArray = audioBufferToWav(exportBuffer);
+      const wavBlob = new Blob([wavArray], {type: "audio/wav"});
+      const el = document.createElement("a");
+      el.href = URL.createObjectURL(wavBlob);
+      el.setAttribute("download", "export.wav");
+      document.body.appendChild(el);
+      el.click();
+      document.body.removeChild(el);
+      audioCtx = new AudioContext();
+      await createNode();
+      playBtn.removeAttribute('disabled');
+      exportBtn.removeAttribute('disabled');
+      exportLoading.style.display = "none";
+    }
+    catch (err) {
+      console.error(`ERROR whilst exporting: ${err}`);
+      playBtn.removeAttribute('disabled');
+      exportBtn.removeAttribute('disabled');
+      exportLoading.style.display = "none";
+    }
+  };
+};
 
 whenSlider.addEventListener('input', function () {
   whenOutput.innerHTML = this.value;

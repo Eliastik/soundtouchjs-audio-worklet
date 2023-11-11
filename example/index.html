@@ -28,6 +28,8 @@
     <div id="duration"></div>
     <button id="play" disabled>Play</button>
     <button id="stop" disabled>Stop</button>
+    <button id="export" disabled>Export</button>
+    <div id="exportLoading" style="display: none;">Exporting...</div>
     When:
     <input
       type="range"
@@ -45,7 +47,7 @@
       max="0"
       value="0"
       id="startSlider"
-      step="0.1"
+      step="0.00001"
     />
     <div id="start"></div>
     End point:
@@ -55,7 +57,7 @@
       max="0"
       value="0"
       id="endSlider"
-      step="0.1"
+      step="0.00001"
     />
     <div id="end"></div>
     Tempo:

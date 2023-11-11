@@ -55,7 +55,7 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
     }
 
     /** (Readonly) Returns true if the internal Soundtouch processor is ready. 
-     * Use the `oninitialized` param if you need a callback when it's ready. */
+     * Use the `onInitialized` param if you need a callback when it's ready. */
     get ready() {
       return this._ready;
     }
@@ -96,7 +96,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       return this.parameters.get("pitch");
     }
     /**
-     * @param {Number} pitch - the pitch to change to. A value of 1 means no pitch change. Default is 1.
+     * @param {Number} pitch - The pitch to change to. A value of 1 means no pitch change. Default is 1.
+     *                         NOTE: The `pitch` parameter takes precedence over the `pitchSemitones` parameter.
      */
     set pitch(pitch) {
       this.parameters.get("pitch").value = pitch;
@@ -107,7 +108,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       return this.parameters.get("pitchSemitones");
     }
     /**
-     * @param {Number} semitone - the semitone to change to. A value of 0 means no pitch change. Default is 0.
+     * @param {Number} semitone - The semitone to change to. A value of 0 means no pitch change. Default is 0.
+     *                            NOTE: The `pitch` parameter takes precedence over the `pitchSemitones` parameter.
      */
     set pitchSemitones(semitone) {
       this.parameters.get("pitchSemitones").value = semitone;
@@ -118,7 +120,10 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       return this.parameters.get("rate");
     }
     /**
-     * @param {Number} rate - the rate to change to. A value of 1 means no rate change; a value of 2 would mean double the speed. Default is 1.
+     * Changes the rate of the node. Careful changing this during playback, as it will also change how much of the audio source is played!
+     * @param {Number} rate - The rate to change to. A value of 1 means no change, a value of 2 would playback at double the speed with affected pitch, a value of 0.5 would playback at half the speed
+     *                        with affected pitch. Default is 1.
+     *                        NOTE: The `rate` parameter takes precedence over the `tempo` parameter.
      */
     set rate(rate) {
       this.parameters.get("rate").value = rate;
@@ -129,7 +134,9 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       return this.parameters.get("tempo");
     }
     /**
-     * @param {Number} tempo - the tempo to change to. A value of 1 means no tempo change; a value of 2 would mean double the speed. Default is 1.
+     * Changes the tempo of the node. Careful changing this during playback, as it will also change how much of the audio source is played!
+     * @param {Number} tempo - The tempo to change to. A value of 1 means no tempo change, a value of 2 would playback at double the speed, a value of 0.5 would playback at half the speed. Default is 1.
+     *                         NOTE: The `rate` parameter takes precedence over the `tempo` parameter.
      */
     set tempo(tempo) {
       this.parameters.get("tempo").value = tempo;
@@ -137,9 +144,10 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
 
     /**
      * Plays the audio source starting at `offset` for `duration` seconds, scheduled to start at `when`.
-     * @param {Number} when - (optional) Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's currentTime. Defaults to this.context.currentTime.
+     * @param {Number} when - (optional) Used to schedule playback of this node. Provide a value in seconds relative to your AudioContext's `currentTime`. Defaults to `this.context.currentTime`.
      * @param {Number} offset - (optional) Where in the audio source to start at, in seconds. Defaults to 0.
-     * @param {Number} duration - (optional) How long to play the audio source for, in seconds. Defaults to the duration of the audio buffer.
+     * @param {Number} duration - (optional) How long to play the node, in seconds. Note that the `rate` and `tempo` parameters will affect how much of the audio source is played; for example, if `tempo`   
+     *                            is set to "2" and the `duration` is "6", the node will play 12 seconds of the audio source at double speed, effectively playing for 6 seconds. Defaults to the duration of the audio buffer.
      */
     start(when = null, offset = null, duration = null) {
       when = when || this.context.currentTime;
@@ -150,8 +158,8 @@ export function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitializ
       }
 
       this.parameters.get("when").value = when;
-      this.parameters.get("offset").value = Math.floor(offset * this.sampleRate);
-      this.parameters.get("stopTime").value = Math.floor(offset * this.sampleRate + duration * this.sampleRate);
+      this.parameters.get("offsetSamples").value = Math.floor(offset * this.sampleRate);
+      this.parameters.get("playbackDurationSamples").value = Math.floor(duration * this.sampleRate);
 
       this._playing = true;
       

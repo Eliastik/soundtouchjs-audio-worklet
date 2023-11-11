@@ -29,7 +29,6 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     super();
 
     this._initialized = false;
-    this.bufferSize = 128;
     this.port.onmessage = this._messageProcessor.bind(this);
     this.port.postMessage({
       message: 'PROCESSOR_CONSTRUCTOR',
@@ -54,9 +53,8 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       );
       this._pipe = new SoundTouch();
       this._filter = new SimpleFilter(this.bufferSource, this._pipe);
-      this._filter.sourcePosition = this.offset;
 
-      // Notify the AudioWorkletNode (SoundTouchNode) that the processor is now ready
+      // Notify the AudioWorkletNode (ScheduledSoundTouchNode) that the processor is now ready
       this._initialized = true;
       return this.port.postMessage({
         message: 'PROCESSOR_READY',
@@ -100,11 +98,11 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
         defaultValue: 0,
       },
       {
-        name: "offset",
+        name: "offsetSamples",
         defaultValue: 0,
       },
       {
-        name: "stopTime",
+        name: "playbackDurationSamples",
         defaultValue: 0,
       },
     ];
@@ -112,23 +110,56 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
 
   reset() {
     if (this._filter) {
+      this._filter.reset();
       this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+      this.bufferSource.position = 0;
     }
   }
 
   resetAndEnd() {
     this.reset();
+    this._justEnded = true;
     this._sendMessage('PROCESSOR_END');
   }
    
   process(inputs, outputs, parameters) {
-    const convertKRateParams = (params) => { 
-      return Object.fromEntries(Object.entries(params).map(([key, val]) => [key, val[0]])); 
-    };
-
-    const {pitch, pitchSemitones, tempo, rate, when, offset, stopTime} = convertKRateParams(parameters);
+    if (!this._initialized || !inputs[0].length) return true;
+    
+    const {pitch, pitchSemitones, tempo, rate, when, offsetSamples, playbackDurationSamples} = Object.fromEntries(Object.entries(parameters).map(([key, val]) => [key, val[0]]));
+    const bufferSize = inputs[0][0].length;
+    const sampleRate = this.bufferSource.sampleRate;
     // eslint-disable-next-line no-undef
-    if (!this._initialized || !inputs[0].length || currentTime < when) {
+    const _currentTime = currentTime;
+
+    //pitch takes precedence over pitchSemitones
+    if (pitch !== 1) {
+      this._pipe.pitch = pitch;
+      this._pipe.pitchSemitones = 1;
+    }
+    else {  
+      this._pipe.pitchSemitones = pitchSemitones;
+    }
+    //rate takes precedence over tempo
+    if (rate !== 1) {
+      this._pipe.rate = rate;
+      this._pipe.tempo = 1;
+    } else {
+      this._pipe.tempo = tempo;
+    }
+    if (!this._filter.sourcePosition || Number.isNaN(this._filter.sourcePosition) || this._filter.sourcePosition < offsetSamples) { 
+      //seek to playback start point
+      this._filter.sourcePosition = offsetSamples;
+    }
+
+    const playbackPosition = this._filter.position;
+    if (playbackPosition > playbackDurationSamples) { 
+      //playbackDurationSamples reached, stop playing
+      this.resetAndEnd();
+      return true;
+    }
+
+    if (_currentTime + (bufferSize / sampleRate) < when) { 
+      //not playing yet!
       this.reset();
       return true;
     }
@@ -138,36 +169,28 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
 
     if (!left || (left && !left.length)) {
       this.resetAndEnd();
-      return false;
+      return false; // no output?! guess it's time to die!
     }
 
-    //cannot assign both pitch and pitchSemitones, so assign pitch only if it's changed from its default of 1.
-    if (pitch !== 1) {
-      this._pipe.pitch = pitch;
-    }
-    else {  
-      this._pipe.pitchSemitones = pitchSemitones;
-    }
-    this._pipe.tempo = tempo;
-    this._pipe.rate = rate;
-    if (!this._filter.sourcePosition || Number.isNaN(this._filter.sourcePosition) || this._filter.sourcePosition < offset) { //seek to playback start point
-      this._filter.sourcePosition = offset;
-    }
-    if (this._filter.sourcePosition > stopTime) { //duration reached, stop playing
+    const startFrame = Math.round(Math.max(0, (when - _currentTime) * sampleRate));
+    const totalFrames = Math.min(bufferSize - startFrame, playbackDurationSamples - playbackPosition);
+    let samples = new Float32Array(totalFrames * 2);
+    const framesExtracted = this._filter.extract(samples, totalFrames);
+
+    if (isNaN(samples[0]) || !framesExtracted) {
+      //no more audio left to process, stop playing
       this.resetAndEnd();
       return true;
     }
 
-    let samples = new Float32Array(this.bufferSize * 2);
-    const framesExtracted = this._filter.extract(samples, inputs[0][0].length);
-
-    if (isNaN(samples[0]) || !framesExtracted) { //no more audio left to process, stop playing
-      this.resetAndEnd();
+    //sometimes after the PROCESSOR_END message is sent, process gets accidently called an extra time, resulting in garbage output. this _justEnded variable fixes that. 
+    if (this._justEnded) {
+      this._justEnded = false;
       return true;
     }
 
     // The sampleBuffer is an interleavered Float32Array (LRLRLRLRLR...), so we pull the bits from their corresponding location
-    for (let i = 0; i < framesExtracted; i++) {
+    for (let i = startFrame; i < startFrame + framesExtracted; i++) {
       left[i] = samples[i * 2];
       right[i] = samples[i * 2 + 1];
       if (isNaN(left[i]) || isNaN(right[i])) {

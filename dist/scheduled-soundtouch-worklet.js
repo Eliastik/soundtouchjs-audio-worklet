@@ -1318,9 +1318,7 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
     key: "reset",
     value: function reset() {
       if (this._filter) {
-        this._filter.reset();
         this._filter.sourcePosition = 0;
-        this.bufferSource.position = 0;
       }
     }
   }, {
@@ -1333,7 +1331,10 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
   }, {
     key: "process",
     value: function process(inputs, outputs, parameters) {
-      if (!this._initialized || !inputs[0].length) return true;
+      if (!this._initialized || !inputs[0].length) {
+        this.reset();
+        return true;
+      }
       var _Object$fromEntries = Object.fromEntries(Object.entries(parameters).map(function (_ref) {
           var _ref2 = _slicedToArray(_ref, 2),
             key = _ref2[0],

@@ -110,9 +110,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
 
   reset() {
     if (this._filter) {
-      this._filter.reset();
       this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
-      this.bufferSource.position = 0;
     }
   }
 
@@ -123,7 +121,10 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
   }
    
   process(inputs, outputs, parameters) {
-    if (!this._initialized || !inputs[0].length) return true;
+    if (!this._initialized || !inputs[0].length) {
+      this.reset();
+      return true;
+    }
     
     const {pitch, pitchSemitones, tempo, rate, when, offsetSamples, playbackDurationSamples} = Object.fromEntries(Object.entries(parameters).map(([key, val]) => [key, val[0]]));
     const bufferSize = inputs[0][0].length;

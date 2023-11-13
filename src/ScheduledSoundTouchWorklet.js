@@ -53,6 +53,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       );
       this._pipe = new SoundTouch();
       this._filter = new SimpleFilter(this.bufferSource, this._pipe);
+      this._filterPositionAtStart = 0;
 
       // Notify the AudioWorkletNode (ScheduledSoundTouchNode) that the processor is now ready
       this._initialized = true;
@@ -111,6 +112,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
   reset() {
     if (this._filter) {
       this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+      this._filterPositionAtStart = this._filter.position;
     }
   }
 
@@ -152,15 +154,17 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       this._filter.sourcePosition = offsetSamples;
     }
 
-    const playbackPosition = this._filter.position;
+    const playbackPosition = this._filter.position - this._filterPositionAtStart;
     if (playbackPosition > playbackDurationSamples) { 
       //playbackDurationSamples reached, stop playing
+      console.log(`playbackDurationSamples reached, stop playing`);
       this.resetAndEnd();
       return true;
     }
 
     if (_currentTime + (bufferSize / sampleRate) < when) { 
       //not playing yet!
+      console.log(`not playing yet!`);
       this.reset();
       return true;
     }
@@ -169,6 +173,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     const right = outputs[0].length > 1 ? outputs[0][1] : outputs[0][0];
 
     if (!left || (left && !left.length)) {
+      console.log(`!left`);
       this.resetAndEnd();
       return false; // no output?! guess it's time to die!
     }
@@ -180,12 +185,14 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
 
     if (isNaN(samples[0]) || !framesExtracted) {
       //no more audio left to process, stop playing
+      console.log({when, _currentTime, sampleRate, playbackDurationSamples, playbackPosition, startFrame, totalFrames, samples, framesExtracted});
       this.resetAndEnd();
       return true;
     }
 
     //sometimes after the PROCESSOR_END message is sent, process gets accidently called an extra time, resulting in garbage output. this _justEnded variable fixes that. 
     if (this._justEnded) {
+      console.log(`_justEnded`);
       this._justEnded = false;
       return true;
     }

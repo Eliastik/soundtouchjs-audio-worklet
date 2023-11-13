@@ -1296,6 +1296,7 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
         this.bufferSource = new ProcessAudioBufferSource(bufferProps, leftChannel, rightChannel);
         this._pipe = new SoundTouch();
         this._filter = new SimpleFilter(this.bufferSource, this._pipe);
+        this._filterPositionAtStart = 0;
         this._initialized = true;
         return this.port.postMessage({
           message: 'PROCESSOR_READY'
@@ -1319,6 +1320,7 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
     value: function reset() {
       if (this._filter) {
         this._filter.sourcePosition = 0;
+        this._filterPositionAtStart = this._filter.position;
       }
     }
   }, {
@@ -1366,18 +1368,21 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
       if (!this._filter.sourcePosition || Number.isNaN(this._filter.sourcePosition) || this._filter.sourcePosition < offsetSamples) {
         this._filter.sourcePosition = offsetSamples;
       }
-      var playbackPosition = this._filter.position;
+      var playbackPosition = this._filter.position - this._filterPositionAtStart;
       if (playbackPosition > playbackDurationSamples) {
+        console.log("playbackDurationSamples reached, stop playing");
         this.resetAndEnd();
         return true;
       }
       if (_currentTime + bufferSize / sampleRate < when) {
+        console.log("not playing yet!");
         this.reset();
         return true;
       }
       var left = outputs[0][0];
       var right = outputs[0].length > 1 ? outputs[0][1] : outputs[0][0];
       if (!left || left && !left.length) {
+        console.log("!left");
         this.resetAndEnd();
         return false;
       }
@@ -1386,10 +1391,22 @@ var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
       var samples = new Float32Array(totalFrames * 2);
       var framesExtracted = this._filter.extract(samples, totalFrames);
       if (isNaN(samples[0]) || !framesExtracted) {
+        console.log({
+          when: when,
+          _currentTime: _currentTime,
+          sampleRate: sampleRate,
+          playbackDurationSamples: playbackDurationSamples,
+          playbackPosition: playbackPosition,
+          startFrame: startFrame,
+          totalFrames: totalFrames,
+          samples: samples,
+          framesExtracted: framesExtracted
+        });
         this.resetAndEnd();
         return true;
       }
       if (this._justEnded) {
+        console.log("_justEnded");
         this._justEnded = false;
         return true;
       }

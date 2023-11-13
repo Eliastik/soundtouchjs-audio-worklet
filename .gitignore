@@ -2,7 +2,6 @@
 /node_modules
 /.idea
 .vscode
-/dist
 .npmrc
 
 package-lock.json

@@ -5,6 +5,7 @@ import clear from 'rollup-plugin-clear';
 import { eslint } from 'rollup-plugin-eslint';
 import cleanup from 'rollup-plugin-cleanup';
 import pkg from '../package.json';
+import typescript from '@rollup/plugin-typescript';
 
 const banner = `/*
 * SoundTouch Audio Worklet v${pkg.version} AudioWorklet using the
@@ -33,7 +34,7 @@ const banner = `/*
 
 export default [
   {
-    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.js'),
+    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.ts'),
     output: [
       {
         file: 'dist/scheduled-soundtouch-audio-node.js',
@@ -49,6 +50,7 @@ export default [
         watch: true,
       }),
       eslint(),
+      typescript(),
       babel({
         babelHelpers: 'bundled',
         configFile: path.resolve(__dirname, '../configs/babel.config.json'),
@@ -57,7 +59,7 @@ export default [
     ],
   },
   {
-    input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.js'),
+    input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.ts'),
     output: [
       {
         file: 'dist/scheduled-soundtouch-worklet.js',
@@ -72,6 +74,7 @@ export default [
         browser: true,
       }),
       eslint(),
+      typescript(),
       babel({
         babelHelpers: 'bundled',
         configFile: path.resolve(__dirname, '../configs/babel.config.json'),

@@ -25,33 +25,6 @@
 
 'use strict';
 
-function _iterableToArrayLimit(r, l) {
-  var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
-  if (null != t) {
-    var e,
-      n,
-      i,
-      u,
-      a = [],
-      f = !0,
-      o = !1;
-    try {
-      if (i = (t = t.call(r)).next, 0 === l) {
-        if (Object(t) !== t) return;
-        f = !1;
-      } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
-    } catch (r) {
-      o = !0, n = r;
-    } finally {
-      try {
-        if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return;
-      } finally {
-        if (o) throw n;
-      }
-    }
-    return a;
-  }
-}
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -114,54 +87,6 @@ function _isNativeReflectConstruct() {
     return false;
   }
 }
-function _construct(Parent, args, Class) {
-  if (_isNativeReflectConstruct()) {
-    _construct = Reflect.construct.bind();
-  } else {
-    _construct = function _construct(Parent, args, Class) {
-      var a = [null];
-      a.push.apply(a, args);
-      var Constructor = Function.bind.apply(Parent, a);
-      var instance = new Constructor();
-      if (Class) _setPrototypeOf(instance, Class.prototype);
-      return instance;
-    };
-  }
-  return _construct.apply(null, arguments);
-}
-function _isNativeFunction(fn) {
-  try {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  } catch (e) {
-    return typeof fn === "function";
-  }
-}
-function _wrapNativeSuper(Class) {
-  var _cache = typeof Map === "function" ? new Map() : undefined;
-  _wrapNativeSuper = function _wrapNativeSuper(Class) {
-    if (Class === null || !_isNativeFunction(Class)) return Class;
-    if (typeof Class !== "function") {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    if (typeof _cache !== "undefined") {
-      if (_cache.has(Class)) return _cache.get(Class);
-      _cache.set(Class, Wrapper);
-    }
-    function Wrapper() {
-      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
-    }
-    Wrapper.prototype = Object.create(Class.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    return _setPrototypeOf(Wrapper, Class);
-  };
-  return _wrapNativeSuper(Class);
-}
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -212,28 +137,6 @@ function _get() {
     };
   }
   return _get.apply(this, arguments);
-}
-function _slicedToArray(arr, i) {
-  return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
-}
-function _arrayWithHoles(arr) {
-  if (Array.isArray(arr)) return arr;
-}
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-  return arr2;
-}
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 function _toPrimitive(input, hint) {
   if (typeof input !== "object" || input === null) return input;
@@ -1234,219 +1137,234 @@ var onUpdate = function onUpdate(sourcePosition) {
   return PitchShifter;
 })();
 
-var ProcessAudioBufferSource = function () {
-  function ProcessAudioBufferSource(bufferProps, leftChannel, rightChannel) {
-    _classCallCheck(this, ProcessAudioBufferSource);
-    Object.assign(this, bufferProps);
-    this.leftChannel = leftChannel;
-    this.rightChannel = rightChannel;
-    this._position = 0;
-  }
-  _createClass(ProcessAudioBufferSource, [{
-    key: "position",
-    get: function get() {
-      return this._position;
-    },
-    set: function set(value) {
-      this._position = value;
+/*
+ * SoundTouch JS audio processing library
+ * Copyright (c) Olli Parviainen
+ * Copyright (c) Ryan Berdeen
+ * Copyright (c) Jakub Fiala
+ * Copyright (c) Steve 'Cutter' Blades
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+class ProcessAudioBufferSource {
+    constructor(bufferProps, leftChannel, rightChannel) {
+        this.position = 0;
+        Object.assign(this, bufferProps);
+        this.leftChannel = leftChannel;
+        this.rightChannel = rightChannel;
     }
-  }, {
-    key: "extract",
-    value: function extract(target) {
-      var numFrames = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      var position = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-      this.position = position;
-      var i = 0;
-      for (; i < numFrames; i++) {
-        target[i * 2] = this.leftChannel[i + position];
-        target[i * 2 + 1] = this.rightChannel[i + position];
-      }
-      return numFrames;
-    }
-  }]);
-  return ProcessAudioBufferSource;
-}();
-
-var ScheduledSoundTouchWorklet = function (_AudioWorkletProcesso) {
-  _inherits(ScheduledSoundTouchWorklet, _AudioWorkletProcesso);
-  var _super = _createSuper(ScheduledSoundTouchWorklet);
-  function ScheduledSoundTouchWorklet(nodeOptions) {
-    var _this;
-    _classCallCheck(this, ScheduledSoundTouchWorklet);
-    _this = _super.call(this);
-    _this._initialized = false;
-    _this.port.onmessage = _this._messageProcessor.bind(_assertThisInitialized(_this));
-    _this.port.postMessage({
-      message: 'PROCESSOR_CONSTRUCTOR',
-      detail: nodeOptions
-    });
-    return _this;
-  }
-  _createClass(ScheduledSoundTouchWorklet, [{
-    key: "_messageProcessor",
-    value: function _messageProcessor(eventFromWorker) {
-      var _eventFromWorker$data = eventFromWorker.data,
-        message = _eventFromWorker$data.message,
-        detail = _eventFromWorker$data.detail;
-      if (message === 'INITIALIZE_PROCESSOR') {
-        var _detail = _slicedToArray(detail, 3),
-          bufferProps = _detail[0],
-          leftChannel = _detail[1],
-          rightChannel = _detail[2];
-        this.bufferSource = new ProcessAudioBufferSource(bufferProps, leftChannel, rightChannel);
-        this._pipe = new SoundTouch();
-        this._filter = new SimpleFilter(this.bufferSource, this._pipe);
-        this._filterPositionAtStart = 0;
-        this._initialized = true;
-        return this.port.postMessage({
-          message: 'PROCESSOR_READY'
-        });
-      }
-    }
-  }, {
-    key: "_sendMessage",
-    value: function _sendMessage(message) {
-      var detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      if (!message) {
-        return;
-      }
-      this.port.postMessage({
-        message: message,
-        detail: detail
-      });
-    }
-  }, {
-    key: "reset",
-    value: function reset() {
-      if (this._filter) {
-        this._filter.sourcePosition = 0;
-        this._filterPositionAtStart = this._filter.position;
-      }
-    }
-  }, {
-    key: "resetAndEnd",
-    value: function resetAndEnd() {
-      this.reset();
-      this._justEnded = true;
-      this._sendMessage('PROCESSOR_END');
-    }
-  }, {
-    key: "process",
-    value: function process(inputs, outputs, parameters) {
-      if (!this._initialized || !inputs[0].length) {
-        this.reset();
-        return true;
-      }
-      var _Object$fromEntries = Object.fromEntries(Object.entries(parameters).map(function (_ref) {
-          var _ref2 = _slicedToArray(_ref, 2),
-            key = _ref2[0],
-            val = _ref2[1];
-          return [key, val[0]];
-        })),
-        pitch = _Object$fromEntries.pitch,
-        pitchSemitones = _Object$fromEntries.pitchSemitones,
-        tempo = _Object$fromEntries.tempo,
-        rate = _Object$fromEntries.rate,
-        when = _Object$fromEntries.when,
-        offsetSamples = _Object$fromEntries.offsetSamples,
-        playbackDurationSamples = _Object$fromEntries.playbackDurationSamples;
-      var bufferSize = inputs[0][0].length;
-      var sampleRate = this.bufferSource.sampleRate;
-      var _currentTime = currentTime;
-      if (pitch !== 1) {
-        this._pipe.pitch = pitch;
-        this._pipe.pitchSemitones = 1;
-      } else {
-        this._pipe.pitchSemitones = pitchSemitones;
-      }
-      if (rate !== 1) {
-        this._pipe.rate = rate;
-        this._pipe.tempo = 1;
-      } else {
-        this._pipe.tempo = tempo;
-      }
-      if (!this._filter.sourcePosition || Number.isNaN(this._filter.sourcePosition) || this._filter.sourcePosition < offsetSamples) {
-        this._filter.sourcePosition = offsetSamples;
-      }
-      var playbackPosition = this._filter.position - this._filterPositionAtStart;
-      if (playbackPosition > playbackDurationSamples) {
-        console.log("playbackDurationSamples reached, stop playing");
-        this.resetAndEnd();
-        return true;
-      }
-      if (_currentTime + bufferSize / sampleRate < when) {
-        console.log("not playing yet!");
-        this.reset();
-        return true;
-      }
-      var left = outputs[0][0];
-      var right = outputs[0].length > 1 ? outputs[0][1] : outputs[0][0];
-      if (!left || left && !left.length) {
-        console.log("!left");
-        this.resetAndEnd();
-        return false;
-      }
-      var startFrame = Math.round(Math.max(0, (when - _currentTime) * sampleRate));
-      var totalFrames = Math.min(bufferSize - startFrame, playbackDurationSamples - playbackPosition);
-      var samples = new Float32Array(totalFrames * 2);
-      var framesExtracted = this._filter.extract(samples, totalFrames);
-      if (isNaN(samples[0]) || !framesExtracted) {
-        console.log({
-          when: when,
-          _currentTime: _currentTime,
-          sampleRate: sampleRate,
-          playbackDurationSamples: playbackDurationSamples,
-          playbackPosition: playbackPosition,
-          startFrame: startFrame,
-          totalFrames: totalFrames,
-          samples: samples,
-          framesExtracted: framesExtracted
-        });
-        this.resetAndEnd();
-        return true;
-      }
-      if (this._justEnded) {
-        console.log("_justEnded");
-        this._justEnded = false;
-        return true;
-      }
-      for (var i = startFrame; i < startFrame + framesExtracted; i++) {
-        left[i] = samples[i * 2];
-        right[i] = samples[i * 2 + 1];
-        if (isNaN(left[i]) || isNaN(right[i])) {
-          left[i] = 0;
-          right[i] = 0;
+    extract(target, numFrames = 0, position = 0) {
+        this.position = position;
+        let i = 0;
+        for (; i < numFrames; i++) {
+            target[i * 2] = this.leftChannel[i + position];
+            target[i * 2 + 1] = this.rightChannel[i + position];
         }
-      }
-      return true;
+        return numFrames;
     }
-  }], [{
-    key: "parameterDescriptors",
-    get: function get() {
-      return [{
-        name: "pitch",
-        defaultValue: 1
-      }, {
-        name: "pitchSemitones",
-        defaultValue: 0
-      }, {
-        name: "tempo",
-        defaultValue: 1
-      }, {
-        name: "rate",
-        defaultValue: 1
-      }, {
-        name: "when",
-        defaultValue: 0
-      }, {
-        name: "offsetSamples",
-        defaultValue: 0
-      }, {
-        name: "playbackDurationSamples",
-        defaultValue: 0
-      }];
+}
+
+/*
+ * SoundTouch JS audio processing library
+ * Copyright (c) DanceCuts LLC
+ * Copyright (c) Olli Parviainen
+ * Copyright (c) Ryan Berdeen
+ * Copyright (c) Jakub Fiala
+ * Copyright (c) Steve 'Cutter' Blades
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
+    constructor(nodeOptions) {
+        super();
+        this.initialized = false;
+        this.bufferSource = null;
+        this.filterPositionAtStart = 0;
+        this.justEnded = false;
+        this.sampleRate = 44100;
+        this.initialized = false;
+        this.port.onmessage = this._messageProcessor.bind(this);
+        this.port.postMessage({
+            message: 'PROCESSOR_CONSTRUCTOR',
+            detail: nodeOptions,
+        });
     }
-  }]);
-  return ScheduledSoundTouchWorklet;
-}( _wrapNativeSuper(AudioWorkletProcessor));
+    /**
+     * Called when message received from AudioWorkletNode
+     * @param {Map} eventFromWorker - a map containing the keys `message` and `detail`
+     * @returns null
+     */
+    _messageProcessor(eventFromWorker) {
+        const { message, detail } = eventFromWorker.data;
+        if (message === 'INITIALIZE_PROCESSOR') {
+            const [bufferProps, leftChannel, rightChannel, sampleRate] = detail;
+            this.bufferSource = new ProcessAudioBufferSource(bufferProps, leftChannel, rightChannel);
+            this.pipe = new SoundTouch();
+            this.filter = new SimpleFilter(this.bufferSource, this.pipe);
+            this.filterPositionAtStart = 0;
+            this.sampleRate = sampleRate;
+            // Notify the AudioWorkletNode (ScheduledSoundTouchNode) that the processor is now ready
+            this.initialized = true;
+            return this.port.postMessage({
+                message: 'PROCESSOR_READY',
+            });
+        }
+    }
+    /**
+     * Sends message to the AudioWorkletNode (ScheduledSoundTouchNode)
+     * @param {any} message
+     * @param {any} detail
+     * @returns
+     */
+    _sendMessage(message, detail = null) {
+        if (!message) {
+            return;
+        }
+        this.port.postMessage({ message, detail });
+    }
+    static get parameterDescriptors() {
+        return [
+            {
+                name: "pitch",
+                defaultValue: 1,
+            },
+            {
+                name: "pitchSemitones",
+                defaultValue: 0,
+            },
+            {
+                name: "tempo",
+                defaultValue: 1,
+            },
+            {
+                name: "rate",
+                defaultValue: 1,
+            },
+            {
+                name: "when",
+                defaultValue: 0,
+            },
+            {
+                name: "offsetSamples",
+                defaultValue: 0,
+            },
+            {
+                name: "playbackDurationSamples",
+                defaultValue: 0,
+            }
+        ];
+    }
+    reset() {
+        if (this.filter) {
+            this.filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+            this.filterPositionAtStart = this.filter.position;
+        }
+    }
+    resetAndEnd() {
+        this.reset();
+        this.justEnded = true;
+        this._sendMessage('PROCESSOR_END');
+    }
+    process(inputs, outputs, parameters) {
+        if (!this.initialized || !inputs[0].length || !this.bufferSource) {
+            this.reset();
+            return true;
+        }
+        const { pitch, pitchSemitones, tempo, rate, when, offsetSamples, playbackDurationSamples } = Object.fromEntries(Object.entries(parameters).map(([key, val]) => [key, val[0]]));
+        const sampleRate = this.sampleRate;
+        const bufferSize = inputs[0][0].length;
+        // eslint-disable-next-line no-undef
+        const _currentTime = currentTime;
+        //pitch takes precedence over pitchSemitones
+        if (pitch !== 1) {
+            this.pipe.pitch = pitch;
+            this.pipe.pitchSemitones = 1;
+        }
+        else {
+            this.pipe.pitchSemitones = pitchSemitones;
+        }
+        //rate takes precedence over tempo
+        if (rate !== 1) {
+            this.pipe.rate = rate;
+            this.pipe.tempo = 1;
+        }
+        else {
+            this.pipe.tempo = tempo;
+        }
+        if (!this.filter.sourcePosition || Number.isNaN(this.filter.sourcePosition) || this.filter.sourcePosition < offsetSamples) {
+            //seek to playback start point
+            this.filter.sourcePosition = offsetSamples;
+        }
+        const playbackPosition = this.filter.position - this.filterPositionAtStart;
+        if (playbackPosition > playbackDurationSamples) {
+            //playbackDurationSamples reached, stop playing
+            console.log(`playbackDurationSamples reached, stop playing`);
+            this.resetAndEnd();
+            return true;
+        }
+        if (_currentTime + (bufferSize / sampleRate) < when) {
+            //not playing yet!
+            console.log(`not playing yet!`);
+            this.reset();
+            return true;
+        }
+        const left = outputs[0][0];
+        const right = outputs[0].length > 1 ? outputs[0][1] : outputs[0][0];
+        if (!left || (left && !left.length)) {
+            console.log(`!left`);
+            this.resetAndEnd();
+            return false; // no output?! guess it's time to die!
+        }
+        const startFrame = Math.round(Math.max(0, (when - _currentTime) * sampleRate));
+        const totalFrames = Math.min(bufferSize - startFrame, playbackDurationSamples - playbackPosition);
+        let samples = new Float32Array(totalFrames * 2);
+        const framesExtracted = this.filter.extract(samples, totalFrames);
+        if (isNaN(samples[0]) || !framesExtracted) {
+            //no more audio left to process, stop playing
+            //console.log({when, _currentTime, sampleRate, playbackDurationSamples, playbackPosition, startFrame, totalFrames, samples, framesExtracted});
+            this.resetAndEnd();
+            return true;
+        }
+        //sometimes after the PROCESSOR_END message is sent, process gets accidently called an extra time, resulting in garbage output. this justEnded variable fixes that. 
+        if (this.justEnded) {
+            //console.log(`justEnded`);
+            this.justEnded = false;
+            return true;
+        }
+        // The sampleBuffer is an interleavered Float32Array (LRLRLRLRLR...), so we pull the bits from their corresponding location
+        for (let i = startFrame; i < startFrame + framesExtracted; i++) {
+            left[i] = samples[i * 2];
+            right[i] = samples[i * 2 + 1];
+            if (isNaN(left[i]) || isNaN(right[i])) {
+                left[i] = 0;
+                right[i] = 0;
+            }
+        }
+        return true;
+    }
+}
 registerProcessor('scheduled-soundtouch-worklet', ScheduledSoundTouchWorklet);

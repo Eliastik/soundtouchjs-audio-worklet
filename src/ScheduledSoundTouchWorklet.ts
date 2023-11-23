@@ -20,15 +20,23 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+//@ts-ignore
 import { SoundTouch, SimpleFilter } from 'soundtouchjs';
 import ProcessAudioBufferSource from './ProcessAudioBufferSource';
 
 class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
-  constructor(nodeOptions) {
+  private initialized = false;
+  private bufferSource: ProcessAudioBufferSource | null = null;
+  private pipe: SoundTouch;
+  private filter: SimpleFilter;
+  private filterPositionAtStart = 0;
+  private justEnded = false;
+  private sampleRate = 44100;
+
+  constructor(nodeOptions: AudioWorkletNodeOptions) {
     super();
 
-    this._initialized = false;
+    this.initialized = false;
     this.port.onmessage = this._messageProcessor.bind(this);
     this.port.postMessage({
       message: 'PROCESSOR_CONSTRUCTOR',
@@ -41,22 +49,23 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    * @param {Map} eventFromWorker - a map containing the keys `message` and `detail`
    * @returns null
    */
-  _messageProcessor(eventFromWorker) {
+  _messageProcessor(eventFromWorker: any) {
     const { message, detail } = eventFromWorker.data;
 
     if (message === 'INITIALIZE_PROCESSOR') {
-      const [bufferProps, leftChannel, rightChannel] = detail;
+      const [bufferProps, leftChannel, rightChannel, sampleRate] = detail;
       this.bufferSource = new ProcessAudioBufferSource(
         bufferProps,
         leftChannel,
         rightChannel
       );
-      this._pipe = new SoundTouch();
-      this._filter = new SimpleFilter(this.bufferSource, this._pipe);
-      this._filterPositionAtStart = 0;
+      this.pipe = new SoundTouch();
+      this.filter = new SimpleFilter(this.bufferSource, this.pipe);
+      this.filterPositionAtStart = 0;
+      this.sampleRate = sampleRate;
 
       // Notify the AudioWorkletNode (ScheduledSoundTouchNode) that the processor is now ready
-      this._initialized = true;
+      this.initialized = true;
       return this.port.postMessage({
         message: 'PROCESSOR_READY',
       });
@@ -69,7 +78,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    * @param {any} detail 
    * @returns 
    */
-  _sendMessage(message, detail = null) {
+  _sendMessage(message: any, detail = null) {
     if (!message) {
       return;
     }
@@ -105,56 +114,56 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       {
         name: "playbackDurationSamples",
         defaultValue: 0,
-      },
+      }
     ];
   }
 
   reset() {
-    if (this._filter) {
-      this._filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
-      this._filterPositionAtStart = this._filter.position;
+    if (this.filter) {
+      this.filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
+      this.filterPositionAtStart = this.filter.position;
     }
   }
 
   resetAndEnd() {
     this.reset();
-    this._justEnded = true;
+    this.justEnded = true;
     this._sendMessage('PROCESSOR_END');
   }
    
-  process(inputs, outputs, parameters) {
-    if (!this._initialized || !inputs[0].length) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
+    if (!this.initialized || !inputs[0].length || !this.bufferSource) {
       this.reset();
       return true;
     }
     
     const {pitch, pitchSemitones, tempo, rate, when, offsetSamples, playbackDurationSamples} = Object.fromEntries(Object.entries(parameters).map(([key, val]) => [key, val[0]]));
+    const sampleRate = this.sampleRate;
     const bufferSize = inputs[0][0].length;
-    const sampleRate = this.bufferSource.sampleRate;
     // eslint-disable-next-line no-undef
     const _currentTime = currentTime;
 
     //pitch takes precedence over pitchSemitones
     if (pitch !== 1) {
-      this._pipe.pitch = pitch;
-      this._pipe.pitchSemitones = 1;
+      this.pipe.pitch = pitch;
+      this.pipe.pitchSemitones = 1;
     }
     else {  
-      this._pipe.pitchSemitones = pitchSemitones;
+      this.pipe.pitchSemitones = pitchSemitones;
     }
     //rate takes precedence over tempo
     if (rate !== 1) {
-      this._pipe.rate = rate;
-      this._pipe.tempo = 1;
+      this.pipe.rate = rate;
+      this.pipe.tempo = 1;
     } else {
-      this._pipe.tempo = tempo;
+      this.pipe.tempo = tempo;
     }
-    if (!this._filter.sourcePosition || Number.isNaN(this._filter.sourcePosition) || this._filter.sourcePosition < offsetSamples) { 
+    if (!this.filter.sourcePosition || Number.isNaN(this.filter.sourcePosition) || this.filter.sourcePosition < offsetSamples) { 
       //seek to playback start point
-      this._filter.sourcePosition = offsetSamples;
+      this.filter.sourcePosition = offsetSamples;
     }
 
-    const playbackPosition = this._filter.position - this._filterPositionAtStart;
+    const playbackPosition = this.filter.position - this.filterPositionAtStart;
     if (playbackPosition > playbackDurationSamples) { 
       //playbackDurationSamples reached, stop playing
       console.log(`playbackDurationSamples reached, stop playing`);
@@ -181,19 +190,19 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     const startFrame = Math.round(Math.max(0, (when - _currentTime) * sampleRate));
     const totalFrames = Math.min(bufferSize - startFrame, playbackDurationSamples - playbackPosition);
     let samples = new Float32Array(totalFrames * 2);
-    const framesExtracted = this._filter.extract(samples, totalFrames);
+    const framesExtracted = this.filter.extract(samples, totalFrames);
 
     if (isNaN(samples[0]) || !framesExtracted) {
       //no more audio left to process, stop playing
-      console.log({when, _currentTime, sampleRate, playbackDurationSamples, playbackPosition, startFrame, totalFrames, samples, framesExtracted});
+      //console.log({when, _currentTime, sampleRate, playbackDurationSamples, playbackPosition, startFrame, totalFrames, samples, framesExtracted});
       this.resetAndEnd();
       return true;
     }
 
-    //sometimes after the PROCESSOR_END message is sent, process gets accidently called an extra time, resulting in garbage output. this _justEnded variable fixes that. 
-    if (this._justEnded) {
-      console.log(`_justEnded`);
-      this._justEnded = false;
+    //sometimes after the PROCESSOR_END message is sent, process gets accidently called an extra time, resulting in garbage output. this justEnded variable fixes that. 
+    if (this.justEnded) {
+      //console.log(`justEnded`);
+      this.justEnded = false;
       return true;
     }
 

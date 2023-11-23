@@ -55,6 +55,8 @@
     "@rollup/plugin-babel": "5.3.1",
     "@rollup/plugin-commonjs": "22.0.0",
     "@rollup/plugin-node-resolve": "13.3.0",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/audioworklet": "^0.0.50",
     "connect": "3.7.0",
     "localip": "1.0.0",
     "open": "8.4.0",
@@ -66,7 +68,8 @@
     "rollup-plugin-clear": "2.0.7",
     "rollup-plugin-eslint": "7.0.0",
     "serve-static": "1.15.0",
-    "soundtouchjs": "0.1.30"
+    "soundtouchjs": "0.1.30",
+    "typescript": "^5.3.2"
   },
   "prettier": {
     "printWidth": 80,
@@ -104,7 +107,7 @@
     "rules": {
       "indent": [
         "error",
-        2
+        4
       ],
       "semi": [
         "error",

@@ -20,23 +20,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+import { BufferProps } from "./BufferProps";
+
 export default class ProcessAudioBufferSource {
-  constructor(bufferProps, leftChannel, rightChannel) {
+  private leftChannel: Float32Array;
+  private rightChannel: Float32Array;
+  position = 0;
+
+  constructor(bufferProps: BufferProps, leftChannel: Float32Array, rightChannel: Float32Array) {
     Object.assign(this, bufferProps);
     this.leftChannel = leftChannel;
     this.rightChannel = rightChannel;
-    this._position = 0;
   }
 
-  get position() {
-    return this._position;
-  }
-
-  set position(value) {
-    this._position = value;
-  }
-
-  extract(target, numFrames = 0, position = 0) {
+  extract(target: Float32Array, numFrames = 0, position = 0) {
     this.position = position;
     let i = 0;
     for (; i < numFrames; i++) {

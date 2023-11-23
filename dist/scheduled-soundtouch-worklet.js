@@ -1174,6 +1174,10 @@ class ProcessAudioBufferSource {
         }
         return numFrames;
     }
+    reset() {
+        this.leftChannel = new Float32Array(1);
+        this.rightChannel = new Float32Array(1);
+    }
 }
 
 /*
@@ -1233,6 +1237,14 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
                 message: 'PROCESSOR_READY',
             });
         }
+        else if (message === 'TERMINATE_PROCESSOR') {
+            if (this.bufferSource) {
+                this.bufferSource.reset();
+            }
+            this.bufferSource = null;
+            this.pipe = null;
+            this.filter = null;
+        }
     }
     /**
      * Sends message to the AudioWorkletNode (ScheduledSoundTouchNode)
@@ -1290,6 +1302,8 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
         this._sendMessage('PROCESSOR_END');
     }
     process(inputs, outputs, parameters) {
+        if (!inputs[0].length)
+            inputs = [[new Float32Array(128).fill(0)], [new Float32Array(128).fill(0)]];
         if (!this.initialized || !inputs[0].length || !this.bufferSource) {
             this.reset();
             return true;

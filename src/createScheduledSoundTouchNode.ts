@@ -31,9 +31,9 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
     private audioBuffer: AudioBuffer | null = null;
     private playing = false;
     private ready = false;
-    private onInitialized: Function | null = null;
+    onInitialized: Function | null = null;
     private bufferNode: AudioBufferSourceNode | null = null;
-    private onended: Function | null = null;
+    onended: Function | null = null;
     
     /**
      * @param {AudioContext} context - an AudioContext instance
@@ -175,6 +175,10 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
       }
       this.bufferNode = null;
 
+      this.port.postMessage({
+        message: 'TERMINATE_PROCESSOR'
+      });
+
       if (this.onended && typeof(this.onended) === "function") {
         this.onended();
       }
@@ -203,7 +207,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
         });
       }
 
-      if (message === 'PROCESSORready') {
+      if (message === 'PROCESSOR_READY') {
         this.ready = true;
         if (this.onInitialized && typeof(this.onInitialized) === "function") {
           this.onInitialized(this);

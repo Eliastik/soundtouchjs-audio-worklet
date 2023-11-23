@@ -1,5 +1,5 @@
 {
-  "name": "@dancecuts/soundtouchjs-scheduled-audio-worklet",
+  "name": "@eliastik/soundtouchjs-audio-worklet",
   "version": "0.1.25",
   "description": "An AudioWorklet implementation of the SoundTouchJS library with scheduling",
   "module": "dist/scheduled-soundtouch-audio-node.js",
@@ -33,10 +33,10 @@
   "license": "LGPL-2.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DanceCuts/soundtouchjs-scheduled-audio-worklet.git"
+    "url": "git+https://github.com/Eliastik/soundtouchjs-audio-worklet.git"
   },
   "bugs": {
-    "url": "https://github.com/DanceCuts/soundtouchjs-scheduled-audio-worklet/issues"
+    "url": "https://github.com/Eliastik/soundtouchjs-audio-worklet/issues"
   },
   "homepage": "https://github.com/cutterbl/SoundTouchJS",
   "scripts": {

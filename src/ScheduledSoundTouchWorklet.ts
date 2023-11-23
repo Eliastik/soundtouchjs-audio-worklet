@@ -69,6 +69,14 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       return this.port.postMessage({
         message: 'PROCESSOR_READY',
       });
+    } else if (message === 'TERMINATE_PROCESSOR') {
+      if(this.bufferSource) {
+        this.bufferSource.reset();
+      }
+
+      this.bufferSource = null;
+      this.pipe = null;
+      this.filter = null;
     }
   }
 
@@ -132,6 +140,8 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
   }
    
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
+    //if (!inputs[0].length) inputs = [[new Float32Array(128).fill(0)], [new Float32Array(128).fill(0)]];
+
     if (!this.initialized || !inputs[0].length || !this.bufferSource) {
       this.reset();
       return true;

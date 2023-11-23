@@ -42,4 +42,9 @@ export default class ProcessAudioBufferSource {
     }
     return numFrames;
   }
+
+  reset() {
+    this.leftChannel = new Float32Array(1);
+    this.rightChannel = new Float32Array(1);
+  }
 }

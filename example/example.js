@@ -3,7 +3,7 @@
  * http://onlinetonegenerator.com/pitch-shifter.html
  */
 
-import {createScheduledSoundTouchNode} from "../src/createScheduledSoundTouchNode.js";
+import {createScheduledSoundTouchNode} from "../dist/scheduled-soundtouch-audio-node-esm.js";
 import {audioBufferToWav} from "./audiobuffer-to-wav.js";
 
 /**

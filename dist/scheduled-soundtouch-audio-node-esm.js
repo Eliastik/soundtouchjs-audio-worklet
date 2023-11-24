@@ -23,10 +23,6 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
 /*
  * SoundTouch JS audio processing library
  * Copyright (c) DanceCuts LLC
@@ -230,4 +226,4 @@ function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitialized = nu
     return new ScheduledSoundTouchNode(audioCtx, audioBuffer, onInitialized);
 }
 
-exports.createScheduledSoundTouchNode = createScheduledSoundTouchNode;
+export { createScheduledSoundTouchNode };

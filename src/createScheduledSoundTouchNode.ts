@@ -87,7 +87,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
 
     /** Returns the currently set pitch of the node. */
     get pitch(): number | undefined { 
-      return this.parameters.get("pitch")?.value;
+      return this.parameters.get("pitch")!.value;
     }
     /**
      * @param {Number} pitch - The pitch to change to. A value of 1 means no pitch change. Default is 1.
@@ -98,8 +98,8 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
     }
 
     /** Returns the currently set pitch of the node, in semitones. */
-    get pitchSemitones(): number | undefined { 
-      return this.parameters.get("pitchSemitones")?.value;
+    get pitchSemitones(): number | undefined {
+      return this.parameters.get("pitchSemitones")!.value;
     }
     /**
      * @param {Number} semitone - The semitone to change to. A value of 0 means no pitch change. Default is 0.
@@ -111,7 +111,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
 
     /** The currently set rate of the node. */
     get rate(): number | undefined { 
-      return this.parameters.get("rate")?.value;
+      return this.parameters.get("rate")!.value;
     }
     /**
      * Changes the rate of the node. Careful changing this during playback, as it will also change how much of the audio source is played!
@@ -125,7 +125,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
 
     /** The currently set tempo of the node. */
     get tempo(): number | undefined { 
-      return this.parameters.get("tempo")?.value;
+      return this.parameters.get("tempo")!.value;
     }
     /**
      * Changes the tempo of the node. Careful changing this during playback, as it will also change how much of the audio source is played!

@@ -1302,8 +1302,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
         this._sendMessage('PROCESSOR_END');
     }
     process(inputs, outputs, parameters) {
-        if (!inputs[0].length)
-            inputs = [[new Float32Array(128).fill(0)], [new Float32Array(128).fill(0)]];
+        //if (!inputs[0].length) inputs = [[new Float32Array(128).fill(0)], [new Float32Array(128).fill(0)]];
         if (!this.initialized || !inputs[0].length || !this.bufferSource) {
             this.reset();
             return true;

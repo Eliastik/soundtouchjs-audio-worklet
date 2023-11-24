@@ -33,53 +33,73 @@ const banner = `/*
 */\n`;
 
 export default [
-  {
-    input: path.join(__dirname, '../src/createScheduledSoundTouchNode.ts'),
-    output: [
-      {
-        file: 'dist/scheduled-soundtouch-audio-node.js',
-        format: 'cjs',
-        banner: banner,
-        sourcemap: false,
-        exports: 'named',
-      },
-    ],
-    plugins: [
-      clear({
-        targets: [path.join(__dirname, '../dist')],
-        watch: true,
-      }),
-      eslint(),
-      typescript(),
-      babel({
-        babelHelpers: 'bundled',
-        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
-      }),
-      cleanup(),
-    ],
-  },
-  {
-    input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.ts'),
-    output: [
-      {
-        file: 'dist/scheduled-soundtouch-worklet.js',
-        format: 'cjs',
-        banner: banner,
-        sourcemap: false,
-        exports: 'named',
-      },
-    ],
-    plugins: [
-      resolve({
-        browser: true,
-      }),
-      eslint(),
-      typescript(),
-      babel({
-        babelHelpers: 'bundled',
-        configFile: path.resolve(__dirname, '../configs/babel.config.json'),
-      }),
-      cleanup(),
-    ],
-  },
+    {
+        input: path.join(__dirname, '../src/createScheduledSoundTouchNode.ts'),
+        output: [
+            {
+                file: 'dist/scheduled-soundtouch-audio-node.js',
+                format: 'cjs',
+                banner: banner,
+                sourcemap: false,
+                exports: 'named',
+            },
+        ],
+        plugins: [
+            clear({
+                targets: [path.join(__dirname, '../dist')],
+                watch: true,
+            }),
+            eslint(),
+            typescript(),
+            babel({
+                babelHelpers: 'bundled',
+                configFile: path.resolve(__dirname, '../configs/babel.config.json'),
+            }),
+            cleanup(),
+        ],
+    },
+    {
+        input: path.join(__dirname, '../src/ScheduledSoundTouchWorklet.ts'),
+        output: [
+            {
+                file: 'dist/scheduled-soundtouch-worklet.js',
+                format: 'cjs',
+                banner: banner,
+                sourcemap: false,
+                exports: 'named',
+            },
+        ],
+        plugins: [
+            resolve({
+                browser: true,
+            }),
+            eslint(),
+            typescript(),
+            babel({
+                babelHelpers: 'bundled',
+                configFile: path.resolve(__dirname, '../configs/babel.config.json'),
+            }),
+            cleanup(),
+        ],
+    },
+    {
+        input: path.join(__dirname, '../src/createScheduledSoundTouchNode.ts'),
+        output: [
+            {
+                file: 'dist/scheduled-soundtouch-audio-node-esm.js',
+                format: 'esm',
+                banner: banner,
+                sourcemap: false,
+                exports: 'named',
+            },
+        ],
+        plugins: [
+            resolve({
+                browser: true,
+            }),
+            eslint(),
+            typescript(),
+            cleanup(),
+        ],
+    },
 ];

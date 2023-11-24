@@ -69,7 +69,8 @@ function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitialized = nu
             this.onInitialized = null;
             this.bufferNode = null;
             this.onended = null;
-            this.port.onmessage = this._messageProcessor.bind(this);
+            this._sampleRate = null;
+            this.port.onmessage = this.messageProcessor.bind(this);
             // Copy the passed AudioBuffer, so it doesn't become detached and can be reused
             this.audioBuffer = audioBuffer;
             this.playing = false;
@@ -80,11 +81,16 @@ function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitialized = nu
         get isPlaying() {
             return this.playing;
         }
-        /** (Readonly) Returns the sample rate of the audio buffer. */
+        /** Returns the sample rate of the audio buffer. */
         get sampleRate() {
+            if (this._sampleRate)
+                return this._sampleRate;
             if (!this.audioBuffer)
                 return undefined;
             return this.audioBuffer.sampleRate;
+        }
+        set sampleRate(sampleRate) {
+            this._sampleRate = sampleRate;
         }
         /** (Readonly) Returns the duration of the audio buffer. */
         get duration() {
@@ -190,7 +196,7 @@ function createScheduledSoundTouchNode(audioCtx, audioBuffer, onInitialized = nu
                 this.onended();
             }
         }
-        _messageProcessor(eventFromWorker) {
+        messageProcessor(eventFromWorker) {
             const { message } = eventFromWorker.data;
             if (message === 'PROCESSOR_CONSTRUCTOR' && this.numberOfChannels) {
                 //processor ready for audio buffer, send it over!

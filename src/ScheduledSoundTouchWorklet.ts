@@ -37,7 +37,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     super();
 
     this.initialized = false;
-    this.port.onmessage = this._messageProcessor.bind(this);
+    this.port.onmessage = this.messageProcessor.bind(this);
     this.port.postMessage({
       message: 'PROCESSOR_CONSTRUCTOR',
       detail: nodeOptions,
@@ -49,11 +49,11 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    * @param {Map} eventFromWorker - a map containing the keys `message` and `detail`
    * @returns null
    */
-  _messageProcessor(eventFromWorker: any) {
+  private messageProcessor(eventFromWorker: any) {
     const { message, detail } = eventFromWorker.data;
 
     if (message === 'INITIALIZE_PROCESSOR') {
-      const [bufferProps, leftChannel, rightChannel, sampleRate] = detail;
+      const [bufferProps, leftChannel, rightChannel] = detail;
       this.bufferSource = new ProcessAudioBufferSource(
         bufferProps,
         leftChannel,
@@ -62,7 +62,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
       this.pipe = new SoundTouch();
       this.filter = new SimpleFilter(this.bufferSource, this.pipe);
       this.filterPositionAtStart = 0;
-      this.sampleRate = sampleRate;
+      this.sampleRate = bufferProps.sampleRate;
 
       // Notify the AudioWorkletNode (ScheduledSoundTouchNode) that the processor is now ready
       this.initialized = true;
@@ -70,13 +70,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
         message: 'PROCESSOR_READY',
       });
     } else if (message === 'TERMINATE_PROCESSOR') {
-      if(this.bufferSource) {
-        this.bufferSource.reset();
-      }
-
-      this.bufferSource = null;
-      this.pipe = null;
-      this.filter = null;
+      this.stop();
     }
   }
 
@@ -86,7 +80,7 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
    * @param {any} detail 
    * @returns 
    */
-  _sendMessage(message: any, detail = null) {
+  private sendMessage(message: any, detail = null) {
     if (!message) {
       return;
     }
@@ -126,22 +120,30 @@ class ScheduledSoundTouchWorklet extends AudioWorkletProcessor {
     ];
   }
 
-  reset() {
+  private reset() {
     if (this.filter) {
       this.filter.sourcePosition = 0; //reset the sourcePosition so if playback is started again, it doesn't continue where it left off.
       this.filterPositionAtStart = this.filter.position;
     }
   }
 
-  resetAndEnd() {
+  private stop() {
+    if (this.bufferSource) {
+      this.bufferSource.reset();
+    }
+
+    this.bufferSource = null;
+    this.pipe = null;
+    this.filter = null;
+  }
+
+  private resetAndEnd() {
     this.reset();
     this.justEnded = true;
-    this._sendMessage('PROCESSOR_END');
+    this.sendMessage('PROCESSOR_END');
   }
    
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
-    //if (!inputs[0].length) inputs = [[new Float32Array(128).fill(0)], [new Float32Array(128).fill(0)]];
-
     if (!this.initialized || !inputs[0].length || !this.bufferSource) {
       this.reset();
       return true;

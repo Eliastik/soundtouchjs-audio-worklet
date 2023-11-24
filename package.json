@@ -112,6 +112,9 @@
       "semi": [
         "error",
         "always"
+      ],
+      "no-debugger": [
+        "warn"
       ]
     }
   }

@@ -34,6 +34,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
     onInitialized: Function | null = null;
     private bufferNode: AudioBufferSourceNode | null = null;
     onended: Function | null = null;
+    private _sampleRate: number | null = null;
     
     /**
      * @param {AudioContext} context - an AudioContext instance
@@ -47,7 +48,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
         outputChannelCount: [2], //forces output to stereo, even if input is mono
       });
       
-      this.port.onmessage = this._messageProcessor.bind(this);
+      this.port.onmessage = this.messageProcessor.bind(this);
 
       // Copy the passed AudioBuffer, so it doesn't become detached and can be reused
       this.audioBuffer = audioBuffer;
@@ -61,10 +62,15 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
       return this.playing;
     }
 
-    /** (Readonly) Returns the sample rate of the audio buffer. */
-    get sampleRate() {
+    /** Returns the sample rate of the audio buffer. */
+    get sampleRate(): number | undefined {
+      if (this._sampleRate) return this._sampleRate;
       if (!this.audioBuffer) return undefined;
       return this.audioBuffer.sampleRate;
+    }
+
+    set sampleRate(sampleRate: number) {
+      this._sampleRate = sampleRate;
     }
 
     /** (Readonly) Returns the duration of the audio buffer. */
@@ -184,7 +190,7 @@ export function createScheduledSoundTouchNode(audioCtx: BaseAudioContext, audioB
       }
     }
 
-    _messageProcessor(eventFromWorker: any) {
+    private messageProcessor(eventFromWorker: any) {
       const { message } = eventFromWorker.data;
 
       if (message === 'PROCESSOR_CONSTRUCTOR' && this.numberOfChannels) {
